@@ -49,15 +49,15 @@ end
 # 3:G:S: scissors
 colormap_RPS = [
   colorant"#FFFFFF",
-  colorant"#990000",
-  colorant"#0033FF",
-  colorant"#006600",
   colorant"#FFCCCC",
   colorant"#99CCFF",
-  colorant"#CCFFCC"]
+  colorant"#CCFFCC",
+  colorant"#F66666",
+  colorant"#6699FF",
+  colorant"#339900"]
 
 row_size = column_size = 200
-endtime = 500
+endtime = 3000
 stage_lattice = zeros(Int64, row_size, column_size)
 
 x = Int64[]
@@ -68,7 +68,7 @@ Y = Int64[]
 Z = Int64[]
 
 Random.seed!(0);
-for k in 1:12
+for k in 1:18
   stage_lattice[rand(2:(row_size-1)), rand(2:(column_size-1))] = mod(k-1,6) + 1
 end
 
@@ -82,12 +82,14 @@ lattice = @animate for t = 1:endtime
       I = i
       J = j
       A = stage_lattice[I, J]
-  
-      if rand(Bool)
-        I += rand([-1,1])
-      else
-        J += rand([-1,1])
-      end
+
+      I += rand([-1,0,1])
+      J += rand([-1,0,1])
+      # if rand(Bool)
+      #   I += rand([-1,1])
+      # else
+      #   J += rand([-1,1])
+      # end
       B = stage_lattice[I, J]
   
       stage_duel[i,j] = duel(A, B)
@@ -108,12 +110,12 @@ lattice = @animate for t = 1:endtime
 gif(lattice, "lattice.mp4", fps = 24)
 
 time_evolution = plot()
-plot!(time_evolution, x, linecolor = colormap_RPS[2], label = "X")
-plot!(time_evolution, y, linecolor = colormap_RPS[3], label = "Y")
-plot!(time_evolution, z, linecolor = colormap_RPS[4], label = "Z")
-plot!(time_evolution, X, linecolor = colormap_RPS[5], label = "x")
-plot!(time_evolution, Y, linecolor = colormap_RPS[6], label = "y")
-plot!(time_evolution, Z, linecolor = colormap_RPS[7], label = "z")
+plot!(time_evolution, x, linecolor = colormap_RPS[2], label = "x")
+plot!(time_evolution, y, linecolor = colormap_RPS[3], label = "y")
+plot!(time_evolution, z, linecolor = colormap_RPS[4], label = "z")
+plot!(time_evolution, X, linecolor = colormap_RPS[5], label = "X")
+plot!(time_evolution, Y, linecolor = colormap_RPS[6], label = "Y")
+plot!(time_evolution, Z, linecolor = colormap_RPS[7], label = "Z")
 png(time_evolution, "time evolution.png")
 
 time_evolution_sum = plot()
