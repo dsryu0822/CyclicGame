@@ -1,7 +1,7 @@
+@time using Base.Threads
 @time using Random
 @time using Statistics
 @time using Dates
-@time using Base.Threads
 @time using StatsBase
 @time using Plots
 
@@ -71,12 +71,16 @@ colormap_RPS = [
 
 save = open("save.csv", "a")
 
-L = 500
-endtime = 5*L^2
-log10M = range(-6., -3., length = 20)
+L = 100
+# endtime = 5000
+# log10M = range(-6., -3., length = 20)
+# EPSILON = 10
+# itr = 0:0
+
+endtime = 5000
+log10M = range(-6., -3., length = 30)
 EPSILON = 2(10. .^ log10M)*(L^2)
-# EPSILON = 0:5
-itr = 100
+itr = 1:10
 
 row_size = column_size = L + 4
 
@@ -111,10 +115,11 @@ stage_lattice[1, 5] = 'E'
 
 print(save, "\n", Dates.now())
 realization = Float64[]
-@threads for T ∈ 1:itr
+@threads for T ∈ itr
 Random.seed!(T)
-for t = 1:endtime
-# lattice = @animate for t = 1:endtime
+
+# for t = 1:endtime
+lattice = @animate for t = 1:endtime
     if mod(t, 500) == 0 print("|") end
     # if mod(t, 1000) == 0 println(t) end
     
