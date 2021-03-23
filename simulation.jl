@@ -1,38 +1,54 @@
 @time using Random
 @time using Statistics
+@time using Dates
 @time using Base.Threads
+@time using StatsBase
 @time using Plots
 
+
+println(Dates.now())
+
 cd(@__DIR__)
-# if pwd() == "c:\\Users\\rmsms\\OneDrive\\lab\\RPS"
-#     cd("210312") # 파일 저장 경로
-# end
+if pwd() == "c:\\Users\\rmsms\\OneDrive\\lab\\RPS"
+    cd("C:\\Users\\rmsms\\OneDrive\\lab\\RPS\\210324") # 파일 저장 경로
+end
 println(pwd())
+
+σ = 1
+μ = 1
 
 function action(center::Char, right::Char)
     probability = rand()
     if probability < σ
-        if center == 'A' && right == 'B'
+        if     center == 'A' && (right == 'B' || right == 'D')
             return ('A', '∅')
-        elseif center == 'B' && right == 'C'
+        elseif center == 'B' && (right == 'C' || right == 'E')
             return ('B', '∅')
-        elseif center == 'C' && right == 'A'
+        elseif center == 'C' && (right == 'D' || right == 'A')
             return ('C', '∅')
+        elseif center == 'D' && (right == 'E' || right == 'B')
+            return ('D', '∅')
+        elseif center == 'E' && (right == 'A' || right == 'C')
+            return ('E', '∅')
         else
             return (center, right)
         end
     elseif (1-μ) < probability
-        if center == 'A' && right == '∅'
+        if     center == 'A' && right == '∅'
             return ('A', 'A')
         elseif center == 'B' && right == '∅'
             return ('B', 'B')
         elseif center == 'C' && right == '∅'
             return ('C', 'C')
+        elseif center == 'D' && right == '∅'
+            return ('D', 'D')
+        elseif center == 'E' && right == '∅'
+            return ('E', 'E')
         else
             return (center, right)
         end
     else
-        return (right, center)
+        return (right, center) # exchange
     end
 end
 
@@ -53,15 +69,19 @@ colormap_RPS = [
   colorant"#9933CC",
   colorant"#FFFFFF"]
 
-  
-N = row_size = column_size = 100 + 4
-endtime = 1000
+save = open("save.csv", "a")
 
-log10M =(-(6:-1:3))
+L = 500
+endtime = 5*L^2
+log10M = range(-6., -3., length = 20)
+EPSILON = 2(10. .^ log10M)*(L^2)
+# EPSILON = 0:5
+itr = 100
 
-for ϵ ∈ 2(10. .^ log10M)*(row_size-4)*(column_size-4)
-# for ϵ ∈ 5:5
+row_size = column_size = L + 4
 
+biodiversity = Float64[]
+for ϵ ∈ EPSILON
 stage_lattice = Array{Char, 2}(undef, row_size, column_size)
 stage_lattice .= '∅'
 
@@ -74,39 +94,31 @@ stage_lattice .= '∅'
 μ = μ / Σ
 ε = ε / Σ
 
-x = Int64[]
-y = Int64[]
-z = Int64[]
-
-Random.seed!(0);
-# for t ∈ 1:2
-#     I = rand(3:(row_size - 1)); J = rand(2:(column_size - 1))
-#     stage_lattice[I, J] = 1
-#     I = rand(3:(row_size - 1)); J = rand(2:(column_size - 1))
-#     stage_lattice[I, J] = 2
-#     I = rand(3:(row_size - 1)); J = rand(2:(column_size - 1))
-#     stage_lattice[I, J] = 3
-#     # I = rand(3:(row_size - 1)); J = rand(2:(column_size - 1))
-#     # stage_lattice[I, J] = 4
-#     # I = rand(3:(row_size - 1)); J = rand(2:(column_size - 1))
-#     # stage_lattice[I, J] = 5
-# end
+A = Int64[]
+B = Int64[]
+C = Int64[]
+D = Int64[]
+E = Int64[]
 
 stage_lattice[3:(row_size - 2), 3:(column_size - 2)] =
- (rand(['A','B','C'], row_size - 4, column_size -4))
+ (rand(['A','B','C','D','E'], row_size - 4, column_size -4))
 
 stage_lattice[1, 1] = 'A'
 stage_lattice[1, 2] = 'B'
 stage_lattice[1, 3] = 'C'
+stage_lattice[1, 4] = 'D'
+stage_lattice[1, 5] = 'E'
 
-# for t = 1:endtime
-lattice = @animate for t = 1:endtime
-    print("|")
-    if mod(t, 100) == 0 println(t) end
-    # stage_duel = copy(stage_lattice)
+print(save, "\n", Dates.now())
+realization = Float64[]
+@threads for T ∈ 1:itr
+Random.seed!(T)
+for t = 1:endtime
+# lattice = @animate for t = 1:endtime
+    if mod(t, 500) == 0 print("|") end
+    # if mod(t, 1000) == 0 println(t) end
     
-    # for (i,j) ∈ shuffle([(i,j) for i in 3:(row_size - 2) for j in 3:(column_size - 2)])
-    for τ ∈ 1:(N^2)
+    for τ ∈ 1:(L^2)
         j = rand(3:(row_size - 2))
         i = rand(3:(column_size - 2))
         나 = stage_lattice[i,j]
@@ -118,38 +130,47 @@ lattice = @animate for t = 1:endtime
             Δx = 0
             Δy = rand([-1,1])
         end
-        # 가 = stage_lattice[i + Δx, j + Δy]
         다 = stage_lattice[i + Δx, j + Δy]
 
         stage_lattice[i,j], stage_lattice[i + Δx, j + Δy] = action(나, 다)
-        #     catch
-        #         println("A: $A, B: $B")
-        # # println("A: $(typeof(A)), B: $(typeof(A))")
-        # # println(typeof(duel(A, B, coop_A, coop_B)))
-        #     end
     end
-    # stage_lattice = stage_duel
-    # stage_lattice[3:(row_size - 1), 2:(column_size - 1)] .*= (rand(row_size - 3, column_size -2) .< 0.9)
-    push!(x, sum(stage_lattice .== 'A'))
-    push!(y, sum(stage_lattice .== 'B'))
-    push!(z, sum(stage_lattice .== 'C'))
-    # push!(X, sum(stage_lattice .== 4))
-    # push!(Y, sum(stage_lattice .== 5))
-    # push!(Z, sum(stage_lattice .== 6))
 
-    # stage_lattice = stage_duel
-    figure = heatmap(stage_lattice, color=colormap_RPS,
-    xaxis=false,yaxis=false,axis=nothing, size=[400, 400], legend=false)
+    push!(A, sum(stage_lattice .== 'A'))
+    push!(B, sum(stage_lattice .== 'B'))
+    push!(C, sum(stage_lattice .== 'C'))
+    push!(D, sum(stage_lattice .== 'D'))
+    push!(E, sum(stage_lattice .== 'E'))
+ 
+    if T == 0
+        figure = heatmap(stage_lattice, color=colormap_RPS,
+        xaxis=false,yaxis=false,axis=nothing, size=[400, 400], legend=false)
+    end
 end
-gif(lattice, "result_lattice $ϵ.mp4", fps=24)
+if T == 0
+    gif(lattice, "result_lattice $ϵ.mp4", fps=24)
 
-time_evolution = plot(legend=:topleft)
-plot!(time_evolution, x, linecolor=colormap_RPS[1], label="x")
-plot!(time_evolution, y, linecolor=colormap_RPS[2], label="y")
-plot!(time_evolution, z, linecolor=colormap_RPS[3], label="z")
-# plot!(time_evolution, X, linecolor=colormap_RPS[5], label="X")
-# plot!(time_evolution, Y, linecolor=colormap_RPS[6], label="Y")
-# plot!(time_evolution, Z, linecolor=colormap_RPS[7], label="Z")
-png(time_evolution, "result_time evolution $ϵ.png")
-
+    time_evolution = plot(legend=:topleft)
+    plot!(time_evolution, A, linecolor=colormap_RPS[1], label="A")
+    plot!(time_evolution, B, linecolor=colormap_RPS[2], label="B")
+    plot!(time_evolution, C, linecolor=colormap_RPS[3], label="C")
+    plot!(time_evolution, D, linecolor=colormap_RPS[4], label="D")
+    plot!(time_evolution, E, linecolor=colormap_RPS[5], label="E")
+    png(time_evolution, "result_time evolution $ϵ.png")
 end
+
+end_population = [A[end], B[end], C[end], D[end], E[end]]
+print(end_population)
+push!(realization, entropy(end_population ./ sum(end_population)))
+
+print(save, ",", realization[end])
+# print(realization[end])
+print(T)
+end
+
+push!(biodiversity, mean(realization))
+println("ε = $ε over!")
+end
+
+biodiversity_plot = plot((10. .^ log10M), biodiversity, xaxis = :log10)
+png(biodiversity_plot, "biodiversity_plot_ϵ.png")
+close(save)
