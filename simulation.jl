@@ -158,12 +158,12 @@ if T == 0
     plot!(time_evolution, C_, linecolor=colormap_RPS[3], label="C")
     plot!(time_evolution, D_, linecolor=colormap_RPS[4], label="D")
     plot!(time_evolution, E_, linecolor=colormap_RPS[5], label="E")
-    png(time_evolution, "result_time evolution $ϵ.png")
+    png(time_evolution, "result_time evolution $(replace(ϵ, "//" => "／")).png")
     print(A_)
 elseif T == 1
     time_evolution = DataFrame(hcat(entropy_, A_, B_, C_, D_, E_),
      ["entropy_", "A_", "B_", "C_", "D_", "E_"])
-    CSV.write("time_evolution $ϵ.csv", time_evolution)
+    CSV.write("time_evolution $(replace(ϵ, "//" => "／")).csv", time_evolution)
 end
 
 println(note, ", $T, $ε, $(entropy_[end])")
