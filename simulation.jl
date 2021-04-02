@@ -65,38 +65,38 @@ row_size = column_size = L + 4
 # EPSILON = 10
 # itr = 0:0
 
-endtime = 10000
+endtime = 1000
 log10M = range(-10., -1., length = 10)
 # EPSILON = 2(10. .^ log10M)*(L^2)
 EPSILON = 2(10//1) .^(-10:-1)*(L^2)
-itr = 1:80
+itr = 1:8
 
 note = open("summary.csv", "a")
 
 try
 
 for ϵ ∈ EPSILON
-stage_lattice = Array{Char, 2}(undef, row_size, column_size)
-stage_lattice .= '∅'
 
-σ = 1
-μ = 1
+print("$ϵ start!")
+
+global σ = 1
+global μ = 1
 ε = ϵ
 # ε = 10
 Σ = (σ + μ + ε)
-σ = σ / Σ
-μ = μ / Σ
+global σ = σ / Σ
+global μ = μ / Σ
 ε = ε / Σ
 
-A_ = zeros(Int64, endtime)
-B_ = zeros(Int64, endtime)
-C_ = zeros(Int64, endtime)
-D_ = zeros(Int64, endtime)
-E_ = zeros(Int64, endtime)
-entropy_ = zeros(Float64, endtime)
+print(note, Dates.now())
+# realization = Float64[]
+@threads for T ∈ itr
+Random.seed!(T)
+stage_lattice = Array{Char, 2}(undef, row_size, column_size)
+stage_lattice .= '∅'
 
 stage_lattice[3:(row_size - 2), 3:(column_size - 2)] =
- (rand(['A','B','C','D','E'], row_size - 4, column_size -4))
+    (rand(['∅', 'A','B','C','D','E'], row_size - 4, column_size -4))
 
 stage_lattice[1, 1] = 'A'
 stage_lattice[1, 2] = 'B'
@@ -104,10 +104,12 @@ stage_lattice[1, 3] = 'C'
 stage_lattice[1, 4] = 'D'
 stage_lattice[1, 5] = 'E'
 
-print(note, Dates.now())
-# realization = Float64[]
-@threads for T ∈ itr
-Random.seed!(T)
+A_ = zeros(Int64, endtime)
+B_ = zeros(Int64, endtime)
+C_ = zeros(Int64, endtime)
+D_ = zeros(Int64, endtime)
+E_ = zeros(Int64, endtime)
+entropy_ = zeros(Float64, endtime)
 
 for t = 1:endtime
 # lattice = @animate for t = 1:endtime
@@ -128,7 +130,9 @@ for t = 1:endtime
         end
         다 = stage_lattice[i + Δx, j + Δy]
 
-        stage_lattice[i,j], stage_lattice[i + Δx, j + Δy] = action(나, 다)
+        if 나 != 다
+            stage_lattice[i,j], stage_lattice[i + Δx, j + Δy] = action(나, 다)
+        end
     end
 
     A_[t] = sum(stage_lattice .== 'A') - 1
@@ -160,7 +164,6 @@ if T == 0
     plot!(time_evolution, D_, linecolor=colormap_RPS[4], label="D")
     plot!(time_evolution, E_, linecolor=colormap_RPS[5], label="E")
     png(time_evolution, "result_time evolution " * cool_ε * "cool_ε.png")
-    print(A_)
 elseif T == 1
     time_evolution = DataFrame(hcat(entropy_, A_, B_, C_, D_, E_),
      ["entropy_", "A_", "B_", "C_", "D_", "E_"])
@@ -176,7 +179,7 @@ end
 
 # close(note); note = open("summary.csv", "a")
 # push!(biodiversity, mean(realization))
-println("ε = $ε over!")
+# println("ε = $ε over!")
 end
 
 # biodiversity_plot = plot((10. .^ log10M), biodiversity, xaxis = :log10)
