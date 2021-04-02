@@ -65,13 +65,16 @@ row_size = column_size = L + 4
 # EPSILON = 10
 # itr = 0:0
 
-endtime = 10000
+endtime = 20000
 # log10M = range(-10., -1., length = 10)
 # EPSILON = 2(10. .^ log10M)*(L^2)
-EPSILON = 2(10//1) .^(-7:-3)*(L^2)
-itr = 1:8
+# EPSILON = 2(10//1) .^(-7:-3)*(L^2)
+EPSILON = 2(2//1) .^(-25:-5)*(L^2)
+itr = 1:32
 
-note = open("summary.csv", "a")
+
+autosave = open("autosave.csv", "a")
+bifurcation = open("bifurcation.csv", "a")
 
 try
 
@@ -88,7 +91,7 @@ global σ = σ / Σ
 global μ = μ / Σ
 ε = ε / Σ
 
-print(note, Dates.now())
+print(autosave, Dates.now())
 # realization = Float64[]
 @threads for T ∈ itr
 Random.seed!(T)
@@ -153,31 +156,36 @@ for t = 1:endtime
         xaxis=false,yaxis=false,axis=nothing, size=[400, 400], legend=false)
     end
 end
-cool_ε = replace(string(ϵ), "//" => "／")
+cool_ε = replace(string(ϵ), "//" => " over ")
 if T == 0
-    gif(lattice, "result_lattice $ϵ.mp4", fps=24)
+    gif(lattice, "movie_lattice $ϵ.mp4", fps=24)
 
-    time_evolution = plot(legend=:topleft)
-    plot!(time_evolution, A_, linecolor=colormap_RPS[1], label="A")
-    plot!(time_evolution, B_, linecolor=colormap_RPS[2], label="B")
-    plot!(time_evolution, C_, linecolor=colormap_RPS[3], label="C")
-    plot!(time_evolution, D_, linecolor=colormap_RPS[4], label="D")
-    plot!(time_evolution, E_, linecolor=colormap_RPS[5], label="E")
-    png(time_evolution, "result_time evolution " * cool_ε * "cool_ε.png")
+    plot_time_evolution = plot(legend=:topleft)
+    plot!(plot_time_evolution, A_, linecolor=colormap_RPS[1], label="A")
+    plot!(plot_time_evolution, B_, linecolor=colormap_RPS[2], label="B")
+    plot!(plot_time_evolution, C_, linecolor=colormap_RPS[3], label="C")
+    plot!(plot_time_evolution, D_, linecolor=colormap_RPS[4], label="D")
+    plot!(plot_time_evolution, E_, linecolor=colormap_RPS[5], label="E")
+    png(plot_time_evolution, "plot_time evolution " * cool_ε * "cool_ε.png")
 elseif T == 1
     time_evolution = DataFrame(hcat(entropy_, A_, B_, C_, D_, E_),
      ["entropy_", "A_", "B_", "C_", "D_", "E_"])
     CSV.write("time_evolution " * cool_ε * ".csv", time_evolution)
 end
 
-println(note, ", $T, $ε, $(entropy_[end])")
+println(autosave, ", $T, $ϵ, $(entropy_[end])")
+close(autosave); autosave = open("autosave.csv")
+if T == itr[end]
+    println(bifurcation, "$ϵ, $(mean(entropy_))")
+    close(bifurcation); bifurcation = open("bifurcation.csv")
+end
 
 # print(save, ",", realization[end])
 # print(realization[end])
 # print(T)
 end
 
-# close(note); note = open("summary.csv", "a")
+# close(autosave); autosave = open("summary.csv", "a")
 # push!(biodiversity, mean(realization))
 # println("ε = $ε over!")
 end
@@ -186,5 +194,6 @@ end
 # png(biodiversity_plot, "biodiversity_plot_ϵ.png")
 
 finally
-    close(note)
+    close(autosave)
+    close(bifurcation)
 end
