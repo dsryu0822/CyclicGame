@@ -65,10 +65,10 @@ row_size = column_size = L + 4
 # EPSILON = 10
 # itr = 0:0
 
-endtime = 1000
-log10M = range(-10., -1., length = 10)
+endtime = 10000
+# log10M = range(-10., -1., length = 10)
 # EPSILON = 2(10. .^ log10M)*(L^2)
-EPSILON = 2(10//1) .^(-10:-1)*(L^2)
+EPSILON = 2(10//1) .^(-7:-3)*(L^2)
 itr = 1:8
 
 note = open("summary.csv", "a")
