@@ -11,41 +11,61 @@ println(Dates.now())
 # cd("E:/RPS")
 println(pwd())
 
-σ = 1
-μ = 1
-
-function action(center::Char, right::Char)    
+function action(left::Char, right::Char,
+                inter::Real, reprod::Real, intra::Real, exchan::Real)
     probability = rand()
-    if probability < σ
-        if     center == 'A' && (right == 'B' || right == 'D')
+    if probability < inter
+        if     left == 'A' && (right == 'B' || right == 'D')
             return ('A', '∅')
-        elseif center == 'B' && (right == 'C' || right == 'E')
+        elseif left == 'B' && (right == 'C' || right == 'E')
             return ('B', '∅')
-        elseif center == 'C' && (right == 'D' || right == 'A')
+        elseif left == 'C' && (right == 'D' || right == 'A')
             return ('C', '∅')
-        elseif center == 'D' && (right == 'E' || right == 'B')
+        elseif left == 'D' && (right == 'E' || right == 'B')
             return ('D', '∅')
-        elseif center == 'E' && (right == 'A' || right == 'C')
+        elseif left == 'E' && (right == 'A' || right == 'C')
             return ('E', '∅')
+        
+        elseif right == 'A' && (left == 'B' || left == 'D')
+            return ('∅', 'A')
+        elseif right == 'B' && (left == 'C' || left == 'E')
+            return ('∅', 'B')
+        elseif right == 'C' && (left == 'D' || left == 'A')
+            return ('∅', 'C')
+        elseif right == 'D' && (left == 'E' || left == 'B')
+            return ('∅', 'D')
+        elseif right == 'E' && (left == 'A' || left == 'C')
+            return ('∅', 'E')
+        
         else
-            return (center, right)
+            return (left, right)
         end
-    elseif (1-μ) < probability
-        if     center == 'A' && right == '∅'
+    elseif probability < inter + reprod
+        if     (left == 'A' && right == '∅') || (right == 'A' && left == '∅')
             return ('A', 'A')
-        elseif center == 'B' && right == '∅'
+        elseif (left == 'B' && right == '∅') || (right == 'B' && left == '∅')
             return ('B', 'B')
-        elseif center == 'C' && right == '∅'
+        elseif (left == 'C' && right == '∅') || (right == 'C' && left == '∅')
             return ('C', 'C')
-        elseif center == 'D' && right == '∅'
+        elseif (left == 'D' && right == '∅') || (right == 'D' && left == '∅')
             return ('D', 'D')
-        elseif center == 'E' && right == '∅'
+        elseif (left == 'E' && right == '∅') || (right == 'E' && left == '∅')
             return ('E', 'E')
         else
-            return (center, right)
+            return (left, right)
+        end
+    elseif probability < inter + reprod + intra
+        if     left == right
+            if rand([true, false])
+                return (left, '∅')
+            else
+                return ('∅', left)
+            end
+        else
+            return (left, right)
         end
     else
-        return (right, center) # exchange
+        return (right, left) # exchange
     end
 end
 
@@ -57,40 +77,41 @@ colormap_RPS = [
   colorant"#9933CC",
   colorant"#FFFFFF"]
 
-L = 200
+L = 100
 row_size = column_size = L + 4
+# ε_range = [0, 1//10,1,10]
+# p_range = [0, 1//10,1,10]
 
-# endtime = 600
-# log10M = range(-6., -3., length = 20)[3]
-# EPSILON = 10
-# itr = 0:0
+ε_range = p_range = (2//1) .^ (-5:5)
 
-endtime = 20000
+endtime = 10000
+itr = 1:16
 # log10M = range(-10., -1., length = 10)
 # EPSILON = 2(10. .^ log10M)*(L^2)
-# EPSILON = 2(10//1) .^(-7:-3)*(L^2)
-EPSILON = 2(2//1) .^(-25:-5)*(L^2)
-itr = 1:32
-
 
 global autosave = open("autosave.csv", "a")
 global bifurcation = open("bifurcation.csv", "a")
 
 try
 
-for ϵ ∈ EPSILON
+for ε ∈ ε_range
+for p ∈ p_range
 
-print("$ϵ start!")
+cool_ε = replace(string(ε), "//" => "／")
+cool_p = replace(string(p), "//" => "／")
+cool = " ε = " * cool_ε * ", p = " * cool_p
+println(cool)
 
-global σ = 1
-global μ = 1
+σ = μ = 1
+# p = 1
+# ε = 1
 
-ε = ϵ
-# ε = 10
-Σ = (σ + μ + ε)
-global σ = σ / Σ
-global μ = μ / Σ
-ε = ε / Σ
+Σ = (σ + μ + p + ε)
+inter  = σ / Σ  # intraspecific competition
+reprod = μ / Σ  # reproduction rate
+intra  = p / Σ  # interspecific competition
+exchan = ε / Σ  # exchange rate
+println(join([inter, reprod, intra, exchan], ", "))
 
 print(autosave, Dates.now())
 # realization = Float64[]
@@ -114,16 +135,17 @@ C_ = zeros(Int64, endtime)
 D_ = zeros(Int64, endtime)
 E_ = zeros(Int64, endtime)
 entropy_ = zeros(Float64, endtime)
+ENTROPY_ = zeros(Float64, length(itr))
 
 for t = 1:endtime
-# lattice = @animate for t = 1:endtime
-    if mod(t, 500) == 0 print("|") end
+# snapshot = @animate for t = 1:endtime
+    if mod(t, 1000) == 0 print("|") end
     # if mod(t, 1000) == 0 println(t) end
     
     for τ ∈ 1:(L^2)
         j = rand(3:(row_size - 2))
         i = rand(3:(column_size - 2))
-        나 = stage_lattice[i,j]
+        left = stage_lattice[i,j]
 
         if rand([true, false])
             Δx = rand([-1,1])
@@ -132,11 +154,10 @@ for t = 1:endtime
             Δx = 0
             Δy = rand([-1,1])
         end
-        다 = stage_lattice[i + Δx, j + Δy]
+        right = stage_lattice[i + Δx, j + Δy]
 
-        if 나 != 다
-            stage_lattice[i,j], stage_lattice[i + Δx, j + Δy] = action(나, 다)
-        end
+        stage_lattice[i,j], stage_lattice[i + Δx, j + Δy] =
+         action(left, right, inter, reprod, intra, exchan)
     end
 
     A_[t] = sum(stage_lattice .== 'A') - 1
@@ -147,52 +168,46 @@ for t = 1:endtime
 
     end_population = [A_[t], B_[t], C_[t], D_[t], E_[t]]
     entropy_[t] = entropy(end_population ./ sum(end_population)) / log(5)
-    if entropy_[t] == 0.0
-        print("!")
-        break
-    end
+    if entropy_[t] == 0.0 print("sigular entropy!"); break end
  
     if T == 0
         figure = heatmap(stage_lattice, color=colormap_RPS,
         xaxis=false,yaxis=false,axis=nothing, size=[400, 400], legend=false)
     end
-end
-cool_ε = replace(string(ϵ), "//" => " over ")
-if T == 0
-    gif(lattice, "movie_lattice $ϵ.mp4", fps=24)
+end # for t = 1:endtime
 
+if T == 0
+    gif(snapshot, "movie_" * cool * ".mp4", fps=24)
+
+elseif T == 1
     plot_time_evolution = plot(legend=:topleft)
     plot!(plot_time_evolution, A_, linecolor=colormap_RPS[1], label="A")
     plot!(plot_time_evolution, B_, linecolor=colormap_RPS[2], label="B")
     plot!(plot_time_evolution, C_, linecolor=colormap_RPS[3], label="C")
     plot!(plot_time_evolution, D_, linecolor=colormap_RPS[4], label="D")
     plot!(plot_time_evolution, E_, linecolor=colormap_RPS[5], label="E")
-    png(plot_time_evolution, "plot_time evolution " * cool_ε * "cool_ε.png")
-elseif T == 1
+    png(plot_time_evolution, "plot_time evolution" * cool * ".png")
+
+    plot_entropy = plot(entropy_, legend=:topleft)
+    png(plot_entropy, "plot_EB" * cool * ".png"); ylims!(0.,1.)
+    
     time_evolution = DataFrame(hcat(entropy_, A_, B_, C_, D_, E_),
      ["entropy_", "A_", "B_", "C_", "D_", "E_"])
-    CSV.write("time_evolution " * cool_ε * ".csv", time_evolution)
+    CSV.write("time_evolution" * cool * ".csv", time_evolution)
 end
 
-println(autosave, ", $T, $ϵ, $(entropy_[end])")
-close(autosave); global autosave = open("autosave.csv")
+ENTROPY_[max(T, 1)] = entropy_[end]
+println(autosave, ", $T, $ε, $p, $(entropy_[end])")
+close(autosave); global autosave = open("autosave.csv", "a")
 if T == itr[end]
-    println(bifurcation, "$ϵ, $(mean(entropy_))")
-    close(bifurcation); global bifurcation = open("bifurcation.csv")
+    println(bifurcation, "$ε, $p, $(mean(ENTROPY_))")
+    close(bifurcation); global bifurcation = open("bifurcation.csv", "a")
 end
 
-# print(save, ",", realization[end])
-# print(realization[end])
-# print(T)
-end
+end # for T ∈ itr
 
-# close(autosave); autosave = open("summary.csv", "a")
-# push!(biodiversity, mean(realization))
-# println("ε = $ε over!")
-end
-
-# biodiversity_plot = plot((10. .^ log10M), biodiversity, xaxis = :log10)
-# png(biodiversity_plot, "biodiversity_plot_ϵ.png")
+end # for p ∈ p_range
+end # for ε ∈ ε_range
 
 finally
     close(autosave)
