@@ -73,8 +73,8 @@ EPSILON = 2(2//1) .^(-25:-5)*(L^2)
 itr = 1:32
 
 
-autosave = open("autosave.csv", "a")
-bifurcation = open("bifurcation.csv", "a")
+global autosave = open("autosave.csv", "a")
+global bifurcation = open("bifurcation.csv", "a")
 
 try
 
@@ -84,6 +84,7 @@ print("$ϵ start!")
 
 global σ = 1
 global μ = 1
+
 ε = ϵ
 # ε = 10
 Σ = (σ + μ + ε)
@@ -174,10 +175,10 @@ elseif T == 1
 end
 
 println(autosave, ", $T, $ϵ, $(entropy_[end])")
-close(autosave); autosave = open("autosave.csv")
+close(autosave); global autosave = open("autosave.csv")
 if T == itr[end]
     println(bifurcation, "$ϵ, $(mean(entropy_))")
-    close(bifurcation); bifurcation = open("bifurcation.csv")
+    close(bifurcation); global bifurcation = open("bifurcation.csv")
 end
 
 # print(save, ",", realization[end])
