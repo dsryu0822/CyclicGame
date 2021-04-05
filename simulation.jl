@@ -179,7 +179,6 @@ end # for t = 1:endtime
 if T == 0
     gif(snapshot, "movie_" * cool * ".mp4", fps=24)
 
-elseif T == 1
     plot_time_evolution = plot(legend=:topleft)
     plot!(plot_time_evolution, A_, linecolor=colormap_RPS[1], label="A")
     plot!(plot_time_evolution, B_, linecolor=colormap_RPS[2], label="B")
@@ -187,13 +186,16 @@ elseif T == 1
     plot!(plot_time_evolution, D_, linecolor=colormap_RPS[4], label="D")
     plot!(plot_time_evolution, E_, linecolor=colormap_RPS[5], label="E")
     png(plot_time_evolution, "plot_time evolution" * cool * ".png")
-
+    
     plot_entropy = plot(entropy_, legend=:topleft)
     png(plot_entropy, "plot_EB" * cool * ".png"); ylims!(0.,1.)
     
     time_evolution = DataFrame(hcat(entropy_, A_, B_, C_, D_, E_),
-     ["entropy_", "A_", "B_", "C_", "D_", "E_"])
+    ["entropy_", "A_", "B_", "C_", "D_", "E_"])
     CSV.write("time_evolution" * cool * ".csv", time_evolution)
+elseif T == 1
+
+    println("result over")
 end
 
 ENTROPY_[max(T, 1)] = entropy_[end]
