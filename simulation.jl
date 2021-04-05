@@ -190,10 +190,10 @@ if T == 0
     plot_entropy = plot(entropy_, legend=:topleft)
     png(plot_entropy, "plot_EB" * cool * ".png"); ylims!(0.,1.)
     
-    time_evolution = DataFrame(hcat(entropy_, A_, B_, C_, D_, E_),
-    ["entropy_", "A_", "B_", "C_", "D_", "E_"])
-    CSV.write("time_evolution" * cool * ".csv", time_evolution)
 elseif T == 1
+    time_evolution = DataFrame(hcat(entropy_, A_, B_, C_, D_, E_),
+     ["entropy_", "A_", "B_", "C_", "D_", "E_"])
+    CSV.write("time_evolution" * cool * ".csv", time_evolution)
 
     println("result over")
 end
