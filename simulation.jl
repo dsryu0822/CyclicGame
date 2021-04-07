@@ -115,6 +115,8 @@ println(join([inter, reprod, intra, exchan], ", "))
 
 print(autosave, Dates.now())
 # realization = Float64[]
+ENTROPY_ = zeros(Float64, length(itr))
+
 @threads for T ∈ itr
 Random.seed!(T)
 stage_lattice = Array{Char, 2}(undef, row_size, column_size)
@@ -135,7 +137,6 @@ C_ = zeros(Int64, endtime)
 D_ = zeros(Int64, endtime)
 E_ = zeros(Int64, endtime)
 entropy_ = zeros(Float64, endtime)
-ENTROPY_ = zeros(Float64, length(itr))
 
 for t = 1:endtime
 # snapshot = @animate for t = 1:endtime
@@ -201,12 +202,10 @@ end
 ENTROPY_[max(T, 1)] = entropy_[end]
 println(autosave, ", $T, $ε, $p, $(entropy_[end])")
 close(autosave); global autosave = open("autosave.csv", "a")
-if T == itr[end]
-    println(bifurcation, "$ε, $p, $(mean(ENTROPY_))")
-    close(bifurcation); global bifurcation = open("bifurcation.csv", "a")
-end
 
 end # for T ∈ itr
+println(bifurcation, "$ε, $p, $(mean(ENTROPY_))")
+close(bifurcation); global bifurcation = open("bifurcation.csv", "a")
 
 end # for p ∈ p_range
 end # for ε ∈ ε_range
