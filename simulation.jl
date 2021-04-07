@@ -140,7 +140,7 @@ entropy_ = zeros(Float64, endtime)
 
 for t = 1:endtime
 # snapshot = @animate for t = 1:endtime
-    if mod(t, 1000) == 0 print("|") end
+    if mod(t, 10000) == 0 print("|") end
     # if mod(t, 1000) == 0 println(t) end
     
     for τ ∈ 1:(L^2)
@@ -196,15 +196,15 @@ elseif T == 1
      ["entropy_", "A_", "B_", "C_", "D_", "E_"])
     CSV.write("time_evolution" * cool * ".csv", time_evolution)
 
-    println("result over")
+    # println("report over")
 end
 
 ENTROPY_[max(T, 1)] = entropy_[end]
-println(autosave, ", $T, $ε, $p, $(entropy_[end])")
+println(autosave, ", $T,$ε,$p,$(entropy_[end])")
 close(autosave); global autosave = open("autosave.csv", "a")
 
 end # for T ∈ itr
-println(bifurcation, "$ε, $p, $(mean(ENTROPY_))")
+println(bifurcation, "$ε,$p,$(mean(ENTROPY_))")
 close(bifurcation); global bifurcation = open("bifurcation.csv", "a")
 
 end # for p ∈ p_range
