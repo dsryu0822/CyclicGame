@@ -1,72 +1,68 @@
 @time using Base.Threads
-@time using Dates
-@time using Random
-@time using Statistics
-@time using StatsBase
+@time using Random, Statistics, StatsBase
 @time using CSV, DataFrames
-@time using Plots
+@time using Plots, Dates
 
-println(Dates.now())
+# @time using CUDA
+# CUDA.versioninfo()
+# CUDA.functional()
 
 # cd("E:/RPS")
 println(pwd())
+println(Dates.now())
 
 function action(left::Char, right::Char,
-                inter::Real, reprod::Real, intra::Real, exchan::Real)
+                inter::Real, reprod::Real, intra::Real
+                )::Tuple{Char, Char}
     probability = rand()
     if probability < inter
         if     left == 'A' && (right == 'B' || right == 'D')
             return ('A', '∅')
         elseif left == 'B' && (right == 'C' || right == 'E')
             return ('B', '∅')
-        elseif left == 'C' && (right == 'D' || right == 'A')
+        elseif left == 'C' && (right == 'D' || right == 'A')    
             return ('C', '∅')
         elseif left == 'D' && (right == 'E' || right == 'B')
             return ('D', '∅')
         elseif left == 'E' && (right == 'A' || right == 'C')
             return ('E', '∅')
         
-        elseif right == 'A' && (left == 'B' || left == 'D')
-            return ('∅', 'A')
-        elseif right == 'B' && (left == 'C' || left == 'E')
-            return ('∅', 'B')
-        elseif right == 'C' && (left == 'D' || left == 'A')
-            return ('∅', 'C')
-        elseif right == 'D' && (left == 'E' || left == 'B')
-            return ('∅', 'D')
-        elseif right == 'E' && (left == 'A' || left == 'C')
-            return ('∅', 'E')
-        
-        else
-            return (left, right)
+        # elseif right == 'A' && (left == 'B' || left == 'D')
+        #     return ('∅', 'A')
+        # elseif right == 'B' && (left == 'C' || left == 'E')
+        #     return ('∅', 'B')
+        # elseif right == 'C' && (left == 'D' || left == 'A')
+        #     return ('∅', 'C')
+        # elseif right == 'D' && (left == 'E' || left == 'B')
+        #     return ('∅', 'D')
+        # elseif right == 'E' && (left == 'A' || left == 'C')
+        #     return ('∅', 'E')
         end
     elseif probability < inter + reprod
-        if     (left == 'A' && right == '∅') || (right == 'A' && left == '∅')
+        if     (left == 'A' && right == '∅') # || (right == 'A' && left == '∅')
             return ('A', 'A')
-        elseif (left == 'B' && right == '∅') || (right == 'B' && left == '∅')
+        elseif (left == 'B' && right == '∅') # || (right == 'B' && left == '∅')
             return ('B', 'B')
-        elseif (left == 'C' && right == '∅') || (right == 'C' && left == '∅')
+        elseif (left == 'C' && right == '∅') # || (right == 'C' && left == '∅')
             return ('C', 'C')
-        elseif (left == 'D' && right == '∅') || (right == 'D' && left == '∅')
+        elseif (left == 'D' && right == '∅') # || (right == 'D' && left == '∅')
             return ('D', 'D')
-        elseif (left == 'E' && right == '∅') || (right == 'E' && left == '∅')
+        elseif (left == 'E' && right == '∅') # || (right == 'E' && left == '∅')
             return ('E', 'E')
-        else
-            return (left, right)
         end
     elseif probability < inter + reprod + intra
         if     left == right
-            if rand([true, false])
+            # if rand([true, false])
                 return (left, '∅')
-            else
-                return ('∅', left)
-            end
-        else
-            return (left, right)
+            # else
+            #     return ('∅', right)
+            # end
         end
     else
         return (right, left) # exchange
     end
+
+    return (left, right)
 end
 
 colormap_RPS = [
@@ -76,6 +72,11 @@ colormap_RPS = [
   colorant"#FFCC00",
   colorant"#9933CC",
   colorant"#FFFFFF"]
+idx = Dict('A' => 1,
+           'B' => 2,
+           'C' => 3,
+           'D' => 4,
+           'E' => 5)
 
 L = 100
 row_size = column_size = L + 4
@@ -83,6 +84,7 @@ row_size = column_size = L + 4
 # p_range = [0, 1//10,1,10]
 
 ε_range = p_range = (2//1) .^ (-5:5)
+# ε_range = p_range = [1//1]
 
 endtime = 10000
 itr = 1:16
@@ -102,15 +104,15 @@ cool_p = replace(string(p), "//" => "／")
 cool = " ε = " * cool_ε * ", p = " * cool_p
 println(cool)
 
-σ = μ = 1
-# p = 1
-# ε = 1
+σ = μ = 1//1
+p = Rational.([p,p,p,p,p])
+# p = Rational.([1,1,1,1,1])
 
-Σ = (σ + μ + p + ε)
-inter  = σ / Σ  # intraspecific competition
-reprod = μ / Σ  # reproduction rate
-intra  = p / Σ  # interspecific competition
-exchan = ε / Σ  # exchange rate
+Σ = p .+ (σ + μ + ε)
+inter  = σ ./ Σ  # intraspecific competition
+reprod = μ ./ Σ  # reproduction rate
+intra  = p ./ Σ  # interspecific competition
+exchan = ε ./ Σ  # exchange rate
 println(join([inter, reprod, intra, exchan], ", "))
 
 print(autosave, Dates.now())
@@ -119,8 +121,7 @@ ENTROPY_ = zeros(Float64, length(itr))
 
 @threads for T ∈ itr
 Random.seed!(T)
-stage_lattice = Array{Char, 2}(undef, row_size, column_size)
-stage_lattice .= '∅'
+stage_lattice = fill('∅', row_size, column_size)
 
 stage_lattice[3:(row_size - 2), 3:(column_size - 2)] =
     (rand(['∅', 'A','B','C','D','E'], row_size - 4, column_size -4))
@@ -140,25 +141,27 @@ entropy_ = zeros(Float64, endtime)
 
 for t = 1:endtime
 # snapshot = @animate for t = 1:endtime
-    if mod(t, 10000) == 0 print("|") end
+    if mod(t, 10) == 0 print("|") end
     # if mod(t, 1000) == 0 println(t) end
     
     for τ ∈ 1:(L^2)
         j = rand(3:(row_size - 2))
         i = rand(3:(column_size - 2))
         left = stage_lattice[i,j]
+        if left == '∅' break end
 
+        Δi, Δj = 0, 0
         if rand([true, false])
-            Δx = rand([-1,1])
-            Δy = 0
+            Δi = rand([-1,1])
         else
-            Δx = 0
-            Δy = rand([-1,1])
+            Δj = rand([-1,1])
         end
-        right = stage_lattice[i + Δx, j + Δy]
+        x = mod(i + Δi-3, row_size-4) + 3
+        y = mod(j + Δj-3, column_size-4) + 3
+        right = stage_lattice[x, y]
 
-        stage_lattice[i,j], stage_lattice[i + Δx, j + Δy] =
-         action(left, right, inter, reprod, intra, exchan)
+        stage_lattice[i, j], stage_lattice[x, y] =
+         action(left, right, inter[idx[left]], reprod[idx[left]], intra[idx[left]])
     end
 
     A_[t] = sum(stage_lattice .== 'A') - 1
@@ -168,17 +171,21 @@ for t = 1:endtime
     E_[t] = sum(stage_lattice .== 'E') - 1
 
     end_population = [A_[t], B_[t], C_[t], D_[t], E_[t]]
-    entropy_[t] = entropy(end_population ./ sum(end_population)) / log(5)
+    entropy_[t] = entropy(end_population ./ sum(end_population), 5)
     if entropy_[t] == 0.0 print("sigular entropy!"); break end
  
     if T == 0
         figure = heatmap(stage_lattice, color=colormap_RPS,
-        xaxis=false,yaxis=false,axis=nothing, size=[400, 400], legend=false)
+         xaxis=false,yaxis=false,axis=nothing, size=[400, 400], legend=false)
     end
 end # for t = 1:endtime
 
 if T == 0
-    gif(snapshot, "movie_" * cool * ".mp4", fps=24)
+    try
+        gif(snapshot, "movie_" * cool * ".mp4", fps=24)
+    catch LoadError
+        println("스냅샷을 깜빡했습니다")
+    end
 
     plot_time_evolution = plot(legend=:topleft)
     plot!(plot_time_evolution, A_, linecolor=colormap_RPS[1], label="A")
@@ -189,7 +196,8 @@ if T == 0
     png(plot_time_evolution, "plot_time evolution" * cool * ".png")
     
     plot_entropy = plot(entropy_, legend=:topleft)
-    png(plot_entropy, "plot_EB" * cool * ".png"); ylims!(0.,1.)
+    hline!(log.(5,1:4)); ylims!(0.,1.)
+    png(plot_entropy, "plot_EB" * cool * ".png")
     
 elseif T == 1
     time_evolution = DataFrame(hcat(entropy_, A_, B_, C_, D_, E_),
