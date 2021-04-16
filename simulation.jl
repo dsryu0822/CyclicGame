@@ -78,16 +78,18 @@ idx = Dict('A' => 1,
            'D' => 4,
            'E' => 5)
 
-L = 100
+L = 1000
 row_size = column_size = L + 4
 # ε_range = [0, 1//10,1,10]
 # p_range = [0, 1//10,1,10]
 
-ε_range = p_range = (2//1) .^ (-5:5)
+# ε_range = p_range = rationalize.(10 .^ (-3:0.3:3))
 # ε_range = p_range = [1//1]
+ε_range = [3]
+p_range = [0]
 
-endtime = 10000
-itr = 1:16
+endtime = 100000
+itr = 0
 # log10M = range(-10., -1., length = 10)
 # EPSILON = 2(10. .^ log10M)*(L^2)
 
@@ -139,8 +141,8 @@ D_ = zeros(Int64, endtime)
 E_ = zeros(Int64, endtime)
 entropy_ = zeros(Float64, endtime)
 
-for t = 1:endtime
-# snapshot = @animate for t = 1:endtime
+# for t = 1:endtime
+snapshot = @animate for t = 1:endtime
     if mod(t, 10) == 0 print("|") end
     # if mod(t, 1000) == 0 println(t) end
     
@@ -148,7 +150,7 @@ for t = 1:endtime
         j = rand(3:(row_size - 2))
         i = rand(3:(column_size - 2))
         left = stage_lattice[i,j]
-        if left == '∅' break end
+        if left == '∅' continue end
 
         Δi, Δj = 0, 0
         if rand([true, false])
