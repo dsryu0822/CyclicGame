@@ -78,20 +78,20 @@ idx = Dict('A' => 1,
            'D' => 4,
            'E' => 5)
 
-L = 1000
+L = 100
 row_size = column_size = L + 4
 # ε_range = [0, 1//10,1,10]
 # p_range = [0, 1//10,1,10]
 
 # ε_range = p_range = rationalize.(10 .^ (-3:0.3:3))
 # ε_range = p_range = [1//1]
-ε_range = [3]
-p_range = [0]
+# ε_range = 10.0 .^ (-3:1)
+log10M = range(-6., -2., length = 20)
+ε_range = 2(10. .^ log10M)*(L^2)
+p_range = 2(10. .^ log10M)*(L^2)
 
-endtime = 100000
-itr = 0
-# log10M = range(-10., -1., length = 10)
-# EPSILON = 2(10. .^ log10M)*(L^2)
+endtime = 10000
+itr = 1:7
 
 global autosave = open("autosave.csv", "a")
 global bifurcation = open("bifurcation.csv", "a")
@@ -107,15 +107,15 @@ cool = " ε = " * cool_ε * ", p = " * cool_p
 println(cool)
 
 σ = μ = 1//1
-p = Rational.([p,p,p,p,p])
-# p = Rational.([1,1,1,1,1])
+# p = Rational.([p,p,p,p,p])
+p = [p,p,1,1,1]
 
 Σ = p .+ (σ + μ + ε)
 inter  = σ ./ Σ  # intraspecific competition
 reprod = μ ./ Σ  # reproduction rate
 intra  = p ./ Σ  # interspecific competition
 exchan = ε ./ Σ  # exchange rate
-println(join([inter, reprod, intra, exchan], ", "))
+# println(join([inter, reprod, intra, exchan], ", "))
 
 print(autosave, Dates.now())
 # realization = Float64[]
@@ -141,9 +141,9 @@ D_ = zeros(Int64, endtime)
 E_ = zeros(Int64, endtime)
 entropy_ = zeros(Float64, endtime)
 
-# for t = 1:endtime
-snapshot = @animate for t = 1:endtime
-    if mod(t, 10) == 0 print("|") end
+for t = 1:endtime
+# snapshot = @animate for t = 1:endtime
+    if mod(t, 1000) == 0 print("|") end
     # if mod(t, 1000) == 0 println(t) end
     
     for τ ∈ 1:(L^2)
