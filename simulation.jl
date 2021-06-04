@@ -95,6 +95,7 @@ itr = 1:7
 
 global autosave = open("autosave.csv", "a")
 global bifurcation = open("bifurcation.csv", "a")
+global bifurcation_n = open("bifurcation_n.csv", "a")
 
 try
 
@@ -108,7 +109,7 @@ println(cool)
 
 σ = μ = 1//1
 # p = Rational.([p,p,p,p,p])
-p = [p,p,1,1,1]
+p = [p,0,0,0,0]
 
 Σ = p .+ (σ + μ + ε)
 inter  = σ ./ Σ  # intraspecific competition
@@ -120,6 +121,7 @@ exchan = ε ./ Σ  # exchange rate
 print(autosave, Dates.now())
 # realization = Float64[]
 ENTROPY_ = zeros(Float64, length(itr))
+ALIVE_ = zeros(Int64, length(itr))
 
 @threads for T ∈ itr
 Random.seed!(T)
@@ -209,11 +211,14 @@ elseif T == 1
     # println("report over")
 end
 
+ALIVE_[max(T, 1)] = (A_[end] > 0) + (B_[end] > 0) + (C_[end] > 0) + (D_[end] > 0) + (E_[end] > 0)
 ENTROPY_[max(T, 1)] = entropy_[end]
 println(autosave, ", $T,$ε,$p,$(entropy_[end])")
 close(autosave); global autosave = open("autosave.csv", "a")
 
 end # for T ∈ itr
+println(bifurcation_n, "$ε,$p,$(mean(ALIVE_))")
+close(bifurcation_n); global bifurcation_n = open("bifurcation_n.csv", "a")
 println(bifurcation, "$ε,$p,$(mean(ENTROPY_))")
 close(bifurcation); global bifurcation = open("bifurcation.csv", "a")
 
@@ -222,5 +227,6 @@ end # for ε ∈ ε_range
 
 finally
     close(autosave)
+    close(bifurcation_n)
     close(bifurcation)
 end
