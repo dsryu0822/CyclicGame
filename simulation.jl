@@ -91,7 +91,7 @@ log10M = range(-6., -2., length = 20)
 p_range = 2(10. .^ log10M)*(L^2)
 
 endtime = 10000
-itr = 1:7
+itr = 1:100
 
 global autosave = open("autosave.csv", "a")
 global bifurcation = open("bifurcation.csv", "a")
@@ -109,7 +109,7 @@ println(cool)
 
 σ = μ = 1//1
 # p = Rational.([p,p,p,p,p])
-p = [p,0,0,0,0]
+p = [p,p,p,p,p]
 
 Σ = p .+ (σ + μ + ε)
 inter  = σ ./ Σ  # intraspecific competition
@@ -213,13 +213,13 @@ end
 
 ALIVE_[max(T, 1)] = (A_[end] > 0) + (B_[end] > 0) + (C_[end] > 0) + (D_[end] > 0) + (E_[end] > 0)
 ENTROPY_[max(T, 1)] = entropy_[end]
-println(autosave, ", $T,$ε,$p,$(entropy_[end])")
+println(autosave, ",$T,$ε,$(string(p)[2:end-1]), $(entropy_[end])")
 close(autosave); global autosave = open("autosave.csv", "a")
 
 end # for T ∈ itr
-println(bifurcation_n, "$ε,$p,$(mean(ALIVE_))")
+println(bifurcation_n, "$ε,$(string(p)[2:end-1]),$(mean(ALIVE_))")
 close(bifurcation_n); global bifurcation_n = open("bifurcation_n.csv", "a")
-println(bifurcation, "$ε,$p,$(mean(ENTROPY_))")
+println(bifurcation, "$ε,$(string(p)[2:end-1]),$(mean(ENTROPY_))")
 close(bifurcation); global bifurcation = open("bifurcation.csv", "a")
 
 end # for p ∈ p_range
