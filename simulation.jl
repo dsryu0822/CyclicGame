@@ -65,13 +65,13 @@ function action(left::Char, right::Char,
     return (left, right)
 end
 
-colormap_RPS = [
-  colorant"#FF3333",
-  colorant"#33CC00",
-  colorant"#0066FF",
-  colorant"#FFCC00",
-  colorant"#9933CC",
-  colorant"#FFFFFF"]
+colormap_RPS = cgrad([
+    colorant"#FF3333",
+    colorant"#33CC00",
+    colorant"#0066FF",
+    colorant"#FFCC00",
+    colorant"#9933CC",
+    colorant"#FFFFFF"], categorical = true)
 idx = Dict('A' => 1,
            'B' => 2,
            'C' => 3,
@@ -86,16 +86,24 @@ row_size = column_size = L + 4
 # ε_range = p_range = rationalize.(10 .^ (-3:0.3:3))
 # ε_range = p_range = [1//1]
 # ε_range = 10.0 .^ (-3:1)
-log10M = range(-6., -2., length = 20)
-ε_range = 2(10. .^ log10M)*(L^2)
-p_range = 2(10. .^ log10M)*(L^2)
+# log10M = range(-6., -1., length = 20)
+# ε_range = 2(10. .^ log10M)*(L^2)
+# p_range = 2(10. .^ log10M)*(L^2)
+log10M = range(-7., -1., length = 20)
+ε_range = (10. .^ log10M)*(L^2)
+p_range = (10. .^ log10M)*(L^2)
 
-endtime = 10000
-itr = 1:100
+endtime = 1000
+itr = 1:16
 
-global autosave = open("autosave.csv", "a")
-global bifurcation = open("bifurcation.csv", "a")
-global bifurcation_n = open("bifurcation_n.csv", "a")
+try
+    mkdir("temp")
+catch
+    println("temp: already exists")
+end
+global autosave = open("temp/autosave.csv", "a")
+global Entropy = open("Entropy_itr01.csv", "a")
+global Counts = open("Counts_itr01.csv", "a")
 
 try
 
@@ -104,12 +112,13 @@ for p ∈ p_range
 
 cool_ε = replace(string(ε), "//" => "／")
 cool_p = replace(string(p), "//" => "／")
-cool = " ε = " * cool_ε * ", p = " * cool_p
-println(cool)
+cool = "ε = " * cool_ε * ", p = " * cool_p
+println("\n" * cool)
 
 σ = μ = 1//1
 # p = Rational.([p,p,p,p,p])
 p = [p,p,p,p,p]
+# p = [p,0,0,0,0]
 
 Σ = p .+ (σ + μ + ε)
 inter  = σ ./ Σ  # intraspecific competition
@@ -123,7 +132,8 @@ print(autosave, Dates.now())
 ENTROPY_ = zeros(Float64, length(itr))
 ALIVE_ = zeros(Int64, length(itr))
 
-@threads for T ∈ itr
+# @threads for T ∈ itr
+for T ∈ itr
 Random.seed!(T)
 stage_lattice = fill('∅', row_size, column_size)
 
@@ -142,6 +152,7 @@ C_ = zeros(Int64, endtime)
 D_ = zeros(Int64, endtime)
 E_ = zeros(Int64, endtime)
 entropy_ = zeros(Float64, endtime)
+alive_ = zeros(Int64, endtime)
 
 for t = 1:endtime
 # snapshot = @animate for t = 1:endtime
@@ -176,7 +187,17 @@ for t = 1:endtime
 
     end_population = [A_[t], B_[t], C_[t], D_[t], E_[t]]
     entropy_[t] = entropy(end_population ./ sum(end_population), 5)
-    if entropy_[t] == 0.0 print("sigular entropy!"); break end
+    alive_[t] = (A_[t] > 0) + (B_[t] > 0) + (C_[t] > 0) + (D_[t] > 0) + (E_[t] > 0)
+    if alive_[t] == 0 print("!")
+        A_[t:end] .= A_[t]
+        B_[t:end] .= B_[t]
+        C_[t:end] .= C_[t]
+        D_[t:end] .= D_[t]
+        E_[t:end] .= E_[t]
+        alive_[t:end] .= alive_[t]
+        entropy_[t:end] .= entropy_[t]
+        break
+    end
  
     if T == 0
         figure = heatmap(stage_lattice, color=colormap_RPS,
@@ -204,29 +225,31 @@ if T == 0
     png(plot_entropy, "plot_EB" * cool * ".png")
     
 elseif T == 1
-    time_evolution = DataFrame(hcat(entropy_, A_, B_, C_, D_, E_),
-     ["entropy_", "A_", "B_", "C_", "D_", "E_"])
-    CSV.write("time_evolution" * cool * ".csv", time_evolution)
+    time_evolution = DataFrame(hcat(entropy_, alive_, A_, B_, C_, D_, E_),
+     ["entropy_", "alive_", "A_", "B_", "C_", "D_", "E_"])
+    CSV.write("temp/time_evolution" * cool * ".csv", time_evolution)
 
     # println("report over")
 end
 
-ALIVE_[max(T, 1)] = (A_[end] > 0) + (B_[end] > 0) + (C_[end] > 0) + (D_[end] > 0) + (E_[end] > 0)
-ENTROPY_[max(T, 1)] = entropy_[end]
-println(autosave, ",$T,$ε,$(string(p)[2:end-1]), $(entropy_[end])")
-close(autosave); global autosave = open("autosave.csv", "a")
-
 end # for T ∈ itr
-println(bifurcation_n, "$ε,$(string(p)[2:end-1]),$(mean(ALIVE_))")
-close(bifurcation_n); global bifurcation_n = open("bifurcation_n.csv", "a")
-println(bifurcation, "$ε,$(string(p)[2:end-1]),$(mean(ENTROPY_))")
-close(bifurcation); global bifurcation = open("bifurcation.csv", "a")
+
+println(autosave, ",$T,$ε,$(string(p)[2:end-1]), $(entropy_[end])")
+close(autosave); global autosave = open("temp/autosave.csv", "a")
+
+ENTROPY_[max(T, 1)] = entropy_[end]
+println(Entropy, "$ε,$(string(p)[2:end-1]),$(mean(ENTROPY_[1:T]))")
+close(Entropy); global Entropy = open("Entropy_itr" * lpad(itr,2,'0') * ".csv", "a")
+
+ALIVE_[max(T, 1)] = alive_[end]
+println(Counts, "$ε,$(string(p)[2:end-1]),$(mean(ALIVE_[1:T]))")
+close(Counts); global Counts = open("Counts_itr" * lpad(itr,2,'0') * ".csv", "a")
 
 end # for p ∈ p_range
 end # for ε ∈ ε_range
 
 finally
     close(autosave)
-    close(bifurcation_n)
-    close(bifurcation)
+    close(Entropy)
+    close(Counts)
 end
