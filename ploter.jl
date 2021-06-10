@@ -3,23 +3,28 @@
 
 cd(@__DIR__)
 
-df1 = CSV.read("bifurcation.csv", DataFrame, header = false)
-# rename!(df1, ["ε", "p", "EB"])
-rename!(df1, :Column7 => :EB, :Column1 => :ε, :Column2 => :p)
+function ctail(tail)
+    if tail == ""
+        return (0,1)
+    elseif tail == "_n"
+        return (0,5)
+    end
+end
 
-# bifurcation_diagram = heatmap(log10M, log10M, reshape(df1.EB, 20, 20),
-#  size = (400, 400), xscale = :log, xticks = [0.2, 20,  200], clim=(0,1))
+for file_name ∈ ["bifurcation_0", "bifurcation_1"]
+for tail ∈ ["", "_n"]
+df1 = CSV.read(file_name * tail * ".csv", DataFrame, header = false)
+rename!(df1, :Column7 => :EB, :Column1 => :ε, :Column2 => :p)
 
 log10M = range(-6., -2., length = 20); L = 100
 axis = 2(10. .^ log10M)*(L^2)
 
 bifurcation_diagram = heatmap(log10M, log10M, reshape(df1.EB, 20, 20),
- size = (400, 400), clim=(0,1), color = :RdYlGn_8)
-# xaxis!(2(10. .^ log10M)*(L^2)); yaxis!(2(10. .^ log10M)*(L^2))
+ size = (400, 400), clim=ctail(tail), color = :Spectral_11)
 xlabel!("2L²10^ε"); ylabel!("2L²10^p")
-
-png(bifurcation_diagram, "bifurcation_diagram 2개.png")
-
+png(bifurcation_diagram, file_name * tail * ".png")
+end
+end
 
 # row_size, column_size = 100, 100
 # @time stage_lattice1 = Array{Char, 2}(undef, row_size, column_size); stage_lattice .= '∅';

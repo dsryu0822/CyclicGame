@@ -2,12 +2,8 @@
 @time using Random, Statistics, StatsBase
 @time using CSV, DataFrames
 @time using Plots, Dates
+@time include("Config.jl")
 
-# @time using CUDA
-# CUDA.versioninfo()
-# CUDA.functional()
-
-# cd("E:/RPS")
 println(pwd())
 println(Dates.now())
 
@@ -78,85 +74,60 @@ idx = Dict('A' => 1,
            'D' => 4,
            'E' => 5)
 
-L = 100
-row_size = column_size = L + 4
-# ε_range = [0, 1//10,1,10]
-# p_range = [0, 1//10,1,10]
+# ---
 
-# ε_range = p_range = rationalize.(10 .^ (-3:0.3:3))
-# ε_range = p_range = [1//1]
-# ε_range = 10.0 .^ (-3:1)
-# log10M = range(-6., -1., length = 20)
-# ε_range = 2(10. .^ log10M)*(L^2)
-# p_range = 2(10. .^ log10M)*(L^2)
-log10M = range(-7., -1., length = 20)
-ε_range = (10. .^ log10M)*(L^2)
-p_range = (10. .^ log10M)*(L^2)
+try; mkdir("temp"); catch; println("temp: already exists"); end
+try; mkdir("Entropy"); catch; println("Entropy: already exists"); end
+try; mkdir("Alive"); catch; println("Alive: already exists"); end
 
-endtime = 1000
-itr = 1:16
-
-try
-    mkdir("temp")
-catch
-    println("temp: already exists")
+for T ∈ itr
+Random.seed!(T)
+println()
+println("                           T: $T")
+print('[')
+for t ∈ itr
+    if t ≤ T print('|') else print(' ') end
 end
-global autosave = open("temp/autosave.csv", "a")
-global Entropy = open("Entropy_itr01.csv", "a")
-global Counts = open("Counts_itr01.csv", "a")
+print(']')
+println(' ' * lpad(T, 2, '0') * " / $(length(itr))")
 
-try
-
-for ε ∈ ε_range
 for p ∈ p_range
+for ε ∈ ε_range
 
 cool_ε = replace(string(ε), "//" => "／")
 cool_p = replace(string(p), "//" => "／")
 cool = "ε = " * cool_ε * ", p = " * cool_p
-println("\n" * cool)
+# println("\n" * cool)
 
 σ = μ = 1//1
-# p = Rational.([p,p,p,p,p])
-p = [p,p,p,p,p]
-# p = [p,0,0,0,0]
+ps = [p,p,p,p,p]
+# ps = [p,0,0,0,0]
 
-Σ = p .+ (σ + μ + ε)
+Σ = ps .+ (σ + μ + ε)
 inter  = σ ./ Σ  # intraspecific competition
 reprod = μ ./ Σ  # reproduction rate
 intra  = p ./ Σ  # interspecific competition
 exchan = ε ./ Σ  # exchange rate
-# println(join([inter, reprod, intra, exchan], ", "))
 
-print(autosave, Dates.now())
-# realization = Float64[]
-ENTROPY_ = zeros(Float64, length(itr))
-ALIVE_ = zeros(Int64, length(itr))
-
-# @threads for T ∈ itr
-for T ∈ itr
-Random.seed!(T)
 stage_lattice = fill('∅', row_size, column_size)
-
 stage_lattice[3:(row_size - 2), 3:(column_size - 2)] =
     (rand(['∅', 'A','B','C','D','E'], row_size - 4, column_size -4))
 
-stage_lattice[1, 1] = 'A'
-stage_lattice[1, 2] = 'B'
-stage_lattice[1, 3] = 'C'
-stage_lattice[1, 4] = 'D'
-stage_lattice[1, 5] = 'E'
+stage_lattice[1, 1] = 'A'; stage_lattice[1, 2] = 'B'; stage_lattice[1, 3] = 'C'
+stage_lattice[1, 4] = 'D'; stage_lattice[1, 5] = 'E'
 
 A_ = zeros(Int64, endtime)
 B_ = zeros(Int64, endtime)
 C_ = zeros(Int64, endtime)
 D_ = zeros(Int64, endtime)
 E_ = zeros(Int64, endtime)
-entropy_ = zeros(Float64, endtime)
 alive_ = zeros(Int64, endtime)
+entropy_ = zeros(Float64, endtime)
+
 
 for t = 1:endtime
 # snapshot = @animate for t = 1:endtime
-    if mod(t, 1000) == 0 print("|") end
+    # if mod(t, 1000) == 0 print("|") end
     # if mod(t, 1000) == 0 println(t) end
     
     for τ ∈ 1:(L^2)
@@ -222,34 +193,29 @@ if T == 0
     
     plot_entropy = plot(entropy_, legend=:topleft)
     hline!(log.(5,1:4)); ylims!(0.,1.)
-    png(plot_entropy, "plot_EB" * cool * ".png")
-    
+    png(plot_entropy, "plot_EB" * cool * ".png")    
 elseif T == 1
     time_evolution = DataFrame(hcat(entropy_, alive_, A_, B_, C_, D_, E_),
      ["entropy_", "alive_", "A_", "B_", "C_", "D_", "E_"])
     CSV.write("temp/time_evolution" * cool * ".csv", time_evolution)
-
-    # println("report over")
 end
+autosave = open("temp/autosave.csv", "a")
+print(autosave, Dates.now())
+println(autosave, ",$T,$ε,$(string(p)[2:end-1]), $(entropy_[end]), $(alive_[end])")
+close(autosave)
+
+Alive = open("Alive/itr" * lpad(T,2,'0') * ".csv", "a")
+println(Alive, "$ε,$(string(ps)[2:end-1]),$(alive_[end])"); close(Alive)
+
+Entropy = open("Entropy/itr"* lpad(T,2,'0') * ".csv", "a")
+println(Entropy, "$ε,$(string(ps)[2:end-1]),$(entropy_[end])"); close(Entropy)
+
+print(lpad(alive_[end],2))
+end # for ε ∈ ε_range
+print("  "); println(Dates.now())
+end # for p ∈ p_range
+
+mv("Alive/itr" * lpad(T,2,'0') * ".csv", "Alive/T" * lpad(T,2,'0') * ".csv")
+mv("Entropy/itr" * lpad(T,2,'0') * ".csv", "Entropy/T" * lpad(T,2,'0') * ".csv")
 
 end # for T ∈ itr
-
-println(autosave, ",$T,$ε,$(string(p)[2:end-1]), $(entropy_[end])")
-close(autosave); global autosave = open("temp/autosave.csv", "a")
-
-ENTROPY_[max(T, 1)] = entropy_[end]
-println(Entropy, "$ε,$(string(p)[2:end-1]),$(mean(ENTROPY_[1:T]))")
-close(Entropy); global Entropy = open("Entropy_itr" * lpad(itr,2,'0') * ".csv", "a")
-
-ALIVE_[max(T, 1)] = alive_[end]
-println(Counts, "$ε,$(string(p)[2:end-1]),$(mean(ALIVE_[1:T]))")
-close(Counts); global Counts = open("Counts_itr" * lpad(itr,2,'0') * ".csv", "a")
-
-end # for p ∈ p_range
-end # for ε ∈ ε_range
-
-finally
-    close(autosave)
-    close(Entropy)
-    close(Counts)
-end
