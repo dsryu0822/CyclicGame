@@ -89,7 +89,7 @@ for t ∈ itr
     if t ≤ T print('|') else print(' ') end
 end
 print(']')
-println(' ' * lpad(T, 2, '0') * " / $(length(itr))")
+println(' ' * lpad(T, 2, '0') * " / $(itr[end])")
 
 for p ∈ p_range
 for ε ∈ ε_range
