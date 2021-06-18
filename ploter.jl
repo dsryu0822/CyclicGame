@@ -1,47 +1,37 @@
 @time using CSV, DataFrames
 @time using Plots
+@time include("Config.jl")
 
-cd(@__DIR__)
+cd(@__DIR__); print(pwd())
 
-function ctail(tail)
-    if tail == ""
-        return (0,1)
-    elseif tail == "_n"
-        return (0,5)
+folder_name = "210617 5 parameter/"
+for ITR ∈ 1:16
+    Alive = zeros(Float64, 20, 20)
+    Entropy = zeros(Float64, 20, 20)
+    itr = 1:ITR
+
+    for seed ∈ lpad.(itr, 2, "0")
+        temp1 = CSV.read(folder_name * "Alive/T" * seed * ".csv", DataFrame, header = false)
+        temp2 = CSV.read(folder_name * "Entropy/T" * seed * ".csv", DataFrame, header = false)
+        Alive += transpose(reshape(temp1.Column7, 20, 20))
+        Entropy += transpose(reshape(temp2.Column7, 20, 20))
     end
+    Alive /= length(itr)
+    Entropy /= length(itr)
+
+    diagram_Alive = heatmap(log10M, log10M, Alive,
+     size = (400, 400), clim=(1,5), color = :Spectral_11)
+     xlabel!("L²10^ε"); ylabel!("L²10^p")
+    #  png(diagram_Alive, "diagram_Alive" * lpad(length(itr), 2, "0") * ".png")
+
+    diagram_Entropy = heatmap(log10M, log10M, Entropy,
+     size = (400, 400), clim=(0,1), color = :Spectral_11)
+     xlabel!("L²10^ε"); ylabel!("L²10^p")
+    #  png(diagram_Entropy, "diagram_Entropy" * lpad(length(itr), 2, "0") * ".png")
+    
+    diagram = plot(diagram_Alive, diagram_Entropy, layout = (1,2),
+     size = (900, 400))
+     png(diagram, "diagram_vs" * lpad(length(itr), 2, "0") * ".png")
 end
 
-for file_name ∈ ["bifurcation_0", "bifurcation_1"]
-for tail ∈ ["", "_n"]
-df1 = CSV.read(file_name * tail * ".csv", DataFrame, header = false)
-rename!(df1, :Column7 => :EB, :Column1 => :ε, :Column2 => :p)
 
-log10M = range(-6., -2., length = 20); L = 100
-axis = 2(10. .^ log10M)*(L^2)
-
-bifurcation_diagram = heatmap(log10M, log10M, reshape(df1.EB, 20, 20),
- size = (400, 400), clim=ctail(tail), color = :Spectral_11)
-xlabel!("2L²10^ε"); ylabel!("2L²10^p")
-png(bifurcation_diagram, file_name * tail * ".png")
-end
-end
-
-# row_size, column_size = 100, 100
-# @time stage_lattice1 = Array{Char, 2}(undef, row_size, column_size); stage_lattice .= '∅';
-# @time stage_lattice2 = fill('∅', row_size, column_size);
-
-# using CUDA
-# N = 100000
-# Base.@time x = rand(N);
-# CUDA.@time y = CUDA.rand(N);
-
-# Base.@time x = x.^2;
-# CUDA.@time y = y.^2;
-
-# x = Dict{Char, Int64}()
-
-# push!(x, ('A'=>1))
-
-# x['A']
-
-# x = y = copy(zeros(Int64, 2))

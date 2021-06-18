@@ -80,7 +80,7 @@ try; mkdir("temp"); catch; println("temp: already exists"); end
 try; mkdir("Entropy"); catch; println("Entropy: already exists"); end
 try; mkdir("Alive"); catch; println("Alive: already exists"); end
 
-for T ∈ itr
+@threads for T ∈ itr
 Random.seed!(T)
 println()
 println("                           T: $T")

@@ -14,4 +14,4 @@ log10M = range(-7., -1., length = 20)
 p_range = (10. .^ log10M)*(L^2)
 
 endtime = 10000
-itr = 1:100
+itr = 1:16
