@@ -102,7 +102,7 @@ print(']')
 println(' ' * lpad(T, 2, '0') * " / $(itr[end])")
 
 case = open(folder_name * "/itr" * lpad(T,3,'0') * ".csv", "a")
-println(case, "ε,p1,p2,p3,p4,p5,alive,entropy5,entropy6"); close(case)
+println(case, "ε,p1,p2,p3,p4,p5,empty,alive,entropy5,entropy6"); close(case)
 
 
 for p ∈ p_range
@@ -225,11 +225,11 @@ elseif T == 1
 end
 autosave = open(folder_name * "/autosave.csv", "a")
 print(autosave, Dates.now())
-println(autosave, ",$T,$ε,$(string(p)[2:end-1]), $(alive_[end]), $(entropy5_[end]), $(entropy6_[end])")
+println(autosave, ",$T,$ε,$(string(p)[2:end-1]),$(empty_[end]),$(alive_[end]),$(entropy5_[end]),$(entropy6_[end])")
 close(autosave)
 
 case = open(folder_name * "/itr" * lpad(T,3,'0') * ".csv", "a")
-println(case, "$ε,$(string(ps)[2:end-1]),$(alive_[end]), $(entropy5_[end]), $(entropy6_[end])"); close(case)
+println(case, "$ε,$(string(ps)[2:end-1]),$(empty_[end]),$(alive_[end]),$(entropy5_[end]),$(entropy6_[end])"); close(case)
 
 # Entropy = open("Entropy/itr"* lpad(T,3,'0') * ".csv", "a")
 # println(Entropy, "$ε,$(string(ps)[2:end-1]),$(entropy5_[end])"); close(Entropy)
