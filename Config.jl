@@ -1,5 +1,5 @@
-const L = 300
-row_size = column_size = L + 4
+const L = 100
+row_size = column_size = L
 # ε_range = [0, 1//10,1,10]
 # p_range = [0, 1//10,1,10]
 
@@ -11,11 +11,13 @@ row_size = column_size = L + 4
 # p_range = 2(10. .^ log10M)*(L^2)
 ε_log10M = range(-5., -1., length = 20)
 p_log10M = range(-7., -3., length = 20)
-ε_range = (10. .^ ε_log10M)*(L^2)
-p_range = (10. .^ p_log10M)*(L^2)
-# ε_range = [1]
-# p_range = [1]
+# ε_range = (10. .^ ε_log10M)*(L^2)
+# p_range = (10. .^ p_log10M)*(L^2)
+ε_range = [1]
+p_range = [1]
 
-endtime = 10(L^2)
+T = 10^4
+# endtime = 1(L^2)
+endtime = T
 # endtime = L
-itr = 1:10
+itr = 2:2

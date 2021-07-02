@@ -27,42 +27,42 @@ function action(left::Int64, right::Int64,
                 )::Tuple{Int64, Int64}
     probability = rand()
     if probability < inter
-        if     left == 1 && (right == 2 || right == 4)
+        if     left === 1 && (right === 2 || right === 4)
             return (1, 0)
-        elseif left == 2 && (right == 3 || right == 5)
+        elseif left === 2 && (right === 3 || right === 5)
             return (2, 0)
-        elseif left == 3 && (right == 4 || right == 1)    
+        elseif left === 3 && (right === 4 || right === 1)    
             return (3, 0)
-        elseif left == 4 && (right == 5 || right == 2)
+        elseif left === 4 && (right === 5 || right === 2)
             return (4, 0)
-        elseif left == 5 && (right == 1 || right == 3)
+        elseif left === 5 && (right === 1 || right === 3)
             return (5, 0)
         
-        # elseif right == 1 && (left == 2 || left == 4)
+        # elseif right === 1 && (left === 2 || left === 4)
         #     return (0, 1)
-        # elseif right == 2 && (left == 3 || left == 5)
+        # elseif right === 2 && (left === 3 || left === 5)
         #     return (0, 2)
-        # elseif right == 3 && (left == 4 || left == 1)
+        # elseif right === 3 && (left === 4 || left === 1)
         #     return (0, 3)
-        # elseif right == 4 && (left == 5 || left == 2)
+        # elseif right === 4 && (left === 5 || left === 2)
         #     return (0, 4)
-        # elseif right == 5 && (left == 1 || left == 3)
+        # elseif right === 5 && (left === 1 || left === 3)
         #     return (0, 5)
         end
     elseif probability < inter + reprod
-        if     (left == 1 && right == 0) # || (right == 1 && left == 0)
+        if     (left === 1 && right === 0) # || (right === 1 && left === 0)
             return (1, 1)
-        elseif (left == 2 && right == 0) # || (right == 2 && left == 0)
+        elseif (left === 2 && right === 0) # || (right === 2 && left === 0)
             return (2, 2)
-        elseif (left == 3 && right == 0) # || (right == 3 && left == 0)
+        elseif (left === 3 && right === 0) # || (right === 3 && left === 0)
             return (3, 3)
-        elseif (left == 4 && right == 0) # || (right == 4 && left == 0)
+        elseif (left === 4 && right === 0) # || (right === 4 && left === 0)
             return (4, 4)
-        elseif (left == 5 && right == 0) # || (right == 5 && left == 0)
+        elseif (left === 5 && right === 0) # || (right === 5 && left === 0)
             return (5, 5)
         end
     elseif probability < inter + reprod + intra
-        if     left == right
+        if     left === right
             # if rand([true, false])
                 return (left, 0)
             # else
@@ -120,9 +120,8 @@ reprod = μ / Σ  # reproduction rate
 intra  = p / Σ  # interspecific competition
 exchan = ε / Σ  # exchange rate
 
-stage_lattice = zeros(Int64, L, L)
-stage_lattice[1:L, 1:L] =
-    (rand(0:5, L, L))
+# stage_lattice = zeros(Int64, L, L)
+stage_lattice = rand(0:5, L, L)
 
 A_ = zeros(Int64, endtime)
 B_ = zeros(Int64, endtime)
@@ -133,82 +132,94 @@ empty_ = zeros(Int64, endtime)
 alive_ = zeros(Int64, endtime)
 entropy6_ = zeros(Float64, endtime)
 
-for t = 1:endtime
+@time for t = 1:endtime
 # snapshot = @animate for t = 1:endtime
-    # if mod(t, 1000) == 0 print("|") end
-    # if mod(t, 1000) == 0 println(t) end
-    
-    for τ ∈ 1:(L^2)
-        j = rand(1:L)
-        i = rand(1:L)
-        left = stage_lattice[i,j]
-        if left == 0 continue end
+    # if mod(t, 1000) === 0 print("|") end
+    # if mod(t, 1000) === 0 println(t) end
 
-        Δi, Δj = 0, 0
-        if rand([true, false])
-            Δi = rand([-1,1])
-        else
-            Δj = rand([-1,1])
-        end
-        x = mod(i + Δi, L) + 1
-        y = mod(j + Δj, L) + 1
-        right = stage_lattice[x, y]
+    from_idx = rand(1:L, L^2, 2)
+    temp = rand(Bool, L^2);
+    to_idx = from_idx .+ (hcat(temp, .~(temp)) .* rand([-1,1], L^2, 2));
+    to_idx = mod.(to_idx .- 1, L) .+ 1
 
-        stage_lattice[i, j], stage_lattice[x, y] =
+    @inbounds for τ ∈ 1:(L^2)
+        # i₁ = rand(1:L)
+        # j₁ = rand(1:L)
+
+        i₁, j₁ = from_idx[τ,1], from_idx[τ,2]
+        left = stage_lattice[i₁, j₁]
+        if left === 0 continue end
+
+        # Δi, Δj = 0, 0
+        # if rand([true, false])
+        #     Δi = rand([-1,1])
+        # else
+        #     Δj = rand([-1,1])
+        # end
+        # i₂ = mod(i₁ + Δi - 1, L) + 1
+        # j₂ = mod(j₁ + Δj - 1, L) + 1
+
+        i₂, j₂ = to_idx[τ,1], to_idx[τ,2]
+        right = stage_lattice[i₂, j₂]
+
+        stage_lattice[i₁, j₁], stage_lattice[i₂, j₂] =
          action(left, right, inter, reprod, intra)
-    end
     
-    if T == 0
-        figure = heatmap(stage_lattice, color=colormap_RPS,
-         xaxis=false,yaxis=false,axis=nothing, size=[400, 400], legend=false)
-    elseif (T == 1) || (length(unique(stage_lattice)) == 2)
-        A_[t] = sum(stage_lattice .== 1)
-        B_[t] = sum(stage_lattice .== 2)
-        C_[t] = sum(stage_lattice .== 3)
-        D_[t] = sum(stage_lattice .== 4)
-        E_[t] = sum(stage_lattice .== 5)
-        end_population = [A_[t], B_[t], C_[t], D_[t], E_[t]]
-        total = sum(end_population)
+        # if T === 0
+        #     figure = heatmap(stage_lattice, color=colormap_RPS,
+        #     xaxis=false,yaxis=false,axis=nothing, size=[400, 400], legend=false)
+        # end
+        # if T === 1
+        #     A_[t] = sum(stage_lattice .== 1)
+        #     B_[t] = sum(stage_lattice .== 2)
+        #     C_[t] = sum(stage_lattice .== 3)
+        #     D_[t] = sum(stage_lattice .== 4)
+        #     E_[t] = sum(stage_lattice .== 5)
+        #     end_population = [A_[t], B_[t], C_[t], D_[t], E_[t]]
+        #     total = sum(end_population)
 
-        empty_[t] = L^2 - total
-        alive_[t] = (A_[t] > 0) + (B_[t] > 0) + (C_[t] > 0) + (D_[t] > 0) + (E_[t] > 0)
-        entropy6_[t] = entropy(push!(end_population, empty_[t]) ./ L^2, 6)
+        #     empty_[t] = L^2 - total
+        #     alive_[t] = (A_[t] > 0) + (B_[t] > 0) + (C_[t] > 0) + (D_[t] > 0) + (E_[t] > 0)
+        #     entropy6_[t] = entropy(push!(end_population, empty_[t]) ./ L^2, 6)
 
-        if alive_[t] == 0 print("!")
-            A_[t:end] .= A_[t]
-            B_[t:end] .= B_[t]
-            C_[t:end] .= C_[t]
-            D_[t:end] .= D_[t]
-            E_[t:end] .= E_[t]
-    
-            empty_[t:end] .= empty_[t]
-            alive_[t:end] .= alive_[t]
-            entropy6_[t:end] .= entropy6_[t]
-            break
-        end
-    end
-    
+        #     if alive_[t] === 1
+        #         A_[t:end] .= A_[t]
+        #         B_[t:end] .= B_[t]
+        #         C_[t:end] .= C_[t]
+        #         D_[t:end] .= D_[t]
+        #         E_[t:end] .= E_[t]
+        
+        #         empty_[t:end] .= empty_[t]
+        #         alive_[t:end] .= alive_[t]
+        #         entropy6_[t:end] .= entropy6_[t]
+        #         break
+        #     end
+        # end
+
+    end # for τ ∈ 1:(L^2)
 end # for t = 1:endtime
 
-if T == 0
+A_[end] = sum(stage_lattice .== 1)
+B_[end] = sum(stage_lattice .== 2)
+C_[end] = sum(stage_lattice .== 3)
+D_[end] = sum(stage_lattice .== 4)
+E_[end] = sum(stage_lattice .== 5)
+end_population = [A_[end], B_[end], C_[end], D_[end], E_[end]]
+total = sum(end_population)
+
+empty_[end] = L^2 - total
+alive_[end] = (A_[end] > 0) + (B_[end] > 0) + (C_[end] > 0) + (D_[end] > 0) + (E_[end] > 0)
+entropy6_[end] = entropy(push!(end_population, empty_[end]) ./ L^2, 6)
+
+print(lpad(alive_[end],2))
+
+if T === 0
     try
         gif(snapshot, "movie_" * cool * ".mp4", fps=24)
     catch LoadError
         println("스냅샷을 깜빡했습니다")
     end
-
-    plot_time_evolution = plot(legend=:topleft)
-    plot!(plot_time_evolution, A_, linecolor=colormap_RPS[1], label="A")
-    plot!(plot_time_evolution, B_, linecolor=colormap_RPS[2], label="B")
-    plot!(plot_time_evolution, C_, linecolor=colormap_RPS[3], label="C")
-    plot!(plot_time_evolution, D_, linecolor=colormap_RPS[4], label="D")
-    plot!(plot_time_evolution, E_, linecolor=colormap_RPS[5], label="E")
-    png(plot_time_evolution, "plot_time evolution" * cool * ".png")
-    
-    plot_entropy = plot(entropy6_, legend=:topleft)
-    hline!(log.(5,1:4)); ylims!(0.,1.)
-    png(plot_entropy, "plot_EB" * cool * ".png")    
-elseif T == 1
+elseif T === 1
     time_evolution = DataFrame(hcat(alive_, entropy6_, empty_, A_, B_, C_, D_, E_),
      ["alive_", "entropy6_", "empty_", "A_", "B_", "C_", "D_", "E_"])
     CSV.write(folder_name  * "/cases" * "/time_evolution" * cool * ".csv", time_evolution)
@@ -223,8 +234,6 @@ case = open(folder_name * "/itr" * lpad(T,3,'0') * ".csv", "a")
 # println(case, "$ε,$(string(ps)[2:end-1]),$(empty_[end]),$(alive_[end]),$(entropy6_[end])")
 println(case, "$ε,$p,$(empty_[end]),$(alive_[end]),$(entropy6_[end])")
 close(case)
-
-print(lpad(alive_[end],2))
 end # for ε ∈ ε_range
 print("  "); println(Dates.now())
 end # for p ∈ p_range
