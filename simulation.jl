@@ -103,7 +103,7 @@ println(case, "ε,p,empty,alive,entropy6"); close(case)
 
 
 for p ∈ p_range
-for ε ∈ ε_range
+@threads for ε ∈ ε_range
 
 cool_ε = replace(string(round(ε, digits =  3)), "//" => "／")
 cool_p = replace(string(round(p, digits =  3)), "//" => "／")
@@ -132,7 +132,7 @@ empty_ = zeros(Int64, endtime)
 alive_ = zeros(Int64, endtime)
 entropy6_ = zeros(Float64, endtime)
 
-@time for t = 1:endtime
+for t = 1:endtime
 # snapshot = @animate for t = 1:endtime
     # if mod(t, 1000) === 0 print("|") end
     # if mod(t, 1000) === 0 println(t) end
