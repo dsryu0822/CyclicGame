@@ -86,7 +86,7 @@ try; mkdir("result" * varying_p * "/cases"); catch; println("result" * varying_p
 # try; mkdir("Entropy"); catch; println("Entropy: already exists"); end
 # try; mkdir("Alive"); catch; println("Alive: already exists"); end
 
-for T ∈ itr
+@threads for T ∈ itr
 Random.seed!(T)
 println()
 println("                           T: $T")
@@ -99,11 +99,14 @@ println(' ' * lpad(T, 2, '0') * " / $(lpad(itr[end], 2, '0'))")
 
 case = open(folder_name * "/itr" * lpad(T,3,'0') * ".csv", "a")
 # println(case, "ε,p1,p2,p3,p4,p5,empty,alive,entropy5,entropy6"); close(case)
-println(case, "ε,p,empty,alive,entropy6"); close(case)
+println(case, "T,ε,p,empty,alive,entropy6"); close(case)
 
 
-for p ∈ p_range
-@threads for ε ∈ ε_range
+
+for (p, ε) ∈ [10. .^(-5,-5), 10. .^(-3,-4), 10. .^(-5,-4), 10. .^(-5,-3)]
+# for p ∈ p_range
+# for ε ∈ ε_range
+# @threads for ε ∈ ε_range
 
 cool_ε = replace(string(round(ε, digits =  3)), "//" => "／")
 cool_p = replace(string(round(p, digits =  3)), "//" => "／")
@@ -132,7 +135,7 @@ empty_ = zeros(Int64, endtime)
 alive_ = zeros(Int64, endtime)
 entropy6_ = zeros(Float64, endtime)
 
-for t = 1:endtime
+@time for t = 1:endtime
 # snapshot = @animate for t = 1:endtime
     # if mod(t, 1000) === 0 print("|") end
     # if mod(t, 1000) === 0 println(t) end
@@ -197,6 +200,26 @@ for t = 1:endtime
         # end
 
     end # for τ ∈ 1:(L^2)
+    if (mod(t, L) === 1) && (t > L)
+        A_[t] = sum(stage_lattice .== 1)
+        B_[t] = sum(stage_lattice .== 2)
+        C_[t] = sum(stage_lattice .== 3)
+        D_[t] = sum(stage_lattice .== 4)
+        E_[t] = sum(stage_lattice .== 5)
+
+
+        l1 = sum(abs.([
+          A_[t] - A_[t-L],
+          B_[t] - B_[t-L],
+          C_[t] - C_[t-L],
+          D_[t] - D_[t-L],
+          E_[t] - E_[t-L]]))
+
+        if l1 < L
+            println("early stopping!")
+            break
+        end
+    end
 end # for t = 1:endtime
 
 A_[end] = sum(stage_lattice .== 1)
@@ -213,17 +236,18 @@ entropy6_[end] = entropy(push!(end_population, empty_[end]) ./ L^2, 6)
 
 print(lpad(alive_[end],2))
 
-if T === 0
-    try
-        gif(snapshot, "movie_" * cool * ".mp4", fps=24)
-    catch LoadError
-        println("스냅샷을 깜빡했습니다")
-    end
-elseif T === 1
-    time_evolution = DataFrame(hcat(alive_, entropy6_, empty_, A_, B_, C_, D_, E_),
-     ["alive_", "entropy6_", "empty_", "A_", "B_", "C_", "D_", "E_"])
-    CSV.write(folder_name  * "/cases" * "/time_evolution" * cool * ".csv", time_evolution)
-end
+# if T === 0
+#     try
+#         gif(snapshot, "movie_" * cool * ".mp4", fps=24)
+#     catch LoadError
+#         println("스냅샷을 깜빡했습니다")
+#     end
+# end
+# if T === 1
+#     time_evolution = DataFrame(hcat(alive_, entropy6_, empty_, A_, B_, C_, D_, E_),
+#      ["alive_", "entropy6_", "empty_", "A_", "B_", "C_", "D_", "E_"])
+#     CSV.write(folder_name  * "/cases" * "/time_evolution" * cool * ".csv", time_evolution)
+# end
 autosave = open(folder_name * "/autosave.csv", "a")
 print(autosave, Dates.now())
 # println(autosave, ",$T,$ε,$(string(p)[2:end-1]),$(empty_[end]),$(alive_[end]),$(entropy6_[end])")
@@ -232,11 +256,13 @@ close(autosave)
 
 case = open(folder_name * "/itr" * lpad(T,3,'0') * ".csv", "a")
 # println(case, "$ε,$(string(ps)[2:end-1]),$(empty_[end]),$(alive_[end]),$(entropy6_[end])")
-println(case, "$ε,$p,$(empty_[end]),$(alive_[end]),$(entropy6_[end])")
+println(case, "$T,$ε,$p,$(empty_[end]),$(alive_[end]),$(entropy6_[end])")
 close(case)
-end # for ε ∈ ε_range
-print("  "); println(Dates.now())
-end # for p ∈ p_range
+
+end # for p, ε ∈ ...
+# end # for ε ∈ ε_range
+# print("  "); println(Dates.now())
+# end # for p ∈ p_range
 
 mv(folder_name * "/itr" * lpad(T,3,'0') * ".csv", folder_name * "/T" * lpad(T,3,'0') * ".csv")
 
