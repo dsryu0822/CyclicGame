@@ -2,11 +2,11 @@
 @time using Random, Statistics, StatsBase
 @time using CSV, DataFrames
 @time using Dates
-using Profile
 @time include("Config.jl")
 
 #---
 
+# @time using Profile
 # @time using Plots
 # colormap_RPS = cgrad([
 #     colorant"#FF3333",
@@ -18,73 +18,14 @@ using Profile
 
 # varying_p = ARGS[1]
 varying_p = "5"
-println("recieved: " * varying_p)
+# println("recieved: " * varying_p)
 println(pwd())
 println(Dates.now())
-
-function action(left::Int64, right::Int64,
-                inter::Float64, reprod::Float64, intra::Float64
-                )::Tuple{Int64, Int64}
-    probability = rand()
-    if probability < inter
-        if     left === 1 && (right === 2 || right === 4)
-            return (1, 0)
-        elseif left === 2 && (right === 3 || right === 5)
-            return (2, 0)
-        elseif left === 3 && (right === 4 || right === 1)    
-            return (3, 0)
-        elseif left === 4 && (right === 5 || right === 2)
-            return (4, 0)
-        elseif left === 5 && (right === 1 || right === 3)
-            return (5, 0)
-        
-        # elseif right === 1 && (left === 2 || left === 4)
-        #     return (0, 1)
-        # elseif right === 2 && (left === 3 || left === 5)
-        #     return (0, 2)
-        # elseif right === 3 && (left === 4 || left === 1)
-        #     return (0, 3)
-        # elseif right === 4 && (left === 5 || left === 2)
-        #     return (0, 4)
-        # elseif right === 5 && (left === 1 || left === 3)
-        #     return (0, 5)
-        end
-    elseif probability < inter + reprod
-        if     (left === 1 && right === 0) # || (right === 1 && left === 0)
-            return (1, 1)
-        elseif (left === 2 && right === 0) # || (right === 2 && left === 0)
-            return (2, 2)
-        elseif (left === 3 && right === 0) # || (right === 3 && left === 0)
-            return (3, 3)
-        elseif (left === 4 && right === 0) # || (right === 4 && left === 0)
-            return (4, 4)
-        elseif (left === 5 && right === 0) # || (right === 5 && left === 0)
-            return (5, 5)
-        end
-    elseif probability < inter + reprod + intra
-        if     left === right
-            # if rand([true, false])
-                return (left, 0)
-            # else
-            #     return (0, right)
-            # end
-        end
-    else
-        return (right, left) # exchange
-    end
-
-    return (left, right)
-end
-
-const σ, μ = 1, 1
 
 # ---
 folder_name = "result" * varying_p
 try; mkdir("result" * varying_p); catch; println("result" * varying_p * ": already exists"); end
 try; mkdir("result" * varying_p * "/cases"); catch; println("result" * varying_p  * "/cases" * ": already exists"); end
-# try; mkdir("temp"); catch; println("temp: already exists"); end
-# try; mkdir("Entropy"); catch; println("Entropy: already exists"); end
-# try; mkdir("Alive"); catch; println("Alive: already exists"); end
 
 for T ∈ itr
 Random.seed!(T)
@@ -99,23 +40,17 @@ println(' ' * lpad(T, 2, '0') * " / $(lpad(itr[end], 2, '0'))")
 
 case = open(folder_name * "/itr" * lpad(T,3,'0') * ".csv", "a")
 # println(case, "ε,p1,p2,p3,p4,p5,empty,alive,entropy5,entropy6"); close(case)
-println(case, "date,T,ε,p,empty,alive,entropy6"); close(case)
+println(case, "date,T,earlystop,ε,p,empty,alive,entropy6"); close(case)
 
-
-
-for (p, ε) ∈ [10. .^(-5,-5), 10. .^(-3,-4), 10. .^(-5,-4), 10. .^(-5,-3)]
+for (p, ε) ∈ [10. .^(-1,-1), 10. .^(+1,0), 10. .^(-1,0), 10. .^(-1,+1)]
+# for (p, ε) ∈ zip(p_range, ε_range)
 # for p ∈ p_range
 # for ε ∈ ε_range
-# @threads for ε ∈ ε_range
 
 cool_ε = replace(string(round(ε, digits =  3)), "//" => "／")
 cool_p = replace(string(round(p, digits =  3)), "//" => "／")
 cool = "ε = " * cool_ε * ", p = " * cool_p
 # println("\n" * cool)
-
-# ps = zeros(Float64, 5)
-# ps[1:parse(Int64, varying_p)] .= p
-# ps = [p,0,0,0,0]
 
 Σ = (p + σ + μ + ε)
 inter  = σ / Σ  # intraspecific competition
@@ -123,7 +58,6 @@ reprod = μ / Σ  # reproduction rate
 intra  = p / Σ  # interspecific competition
 exchan = ε / Σ  # exchange rate
 
-# stage_lattice = zeros(Int64, L, L)
 stage_lattice = rand(0:5, L, L)
 
 A_ = zeros(Int64, endtime)
@@ -135,10 +69,11 @@ empty_ = zeros(Int64, endtime)
 alive_ = zeros(Int64, endtime)
 entropy6_ = zeros(Float64, endtime)
 
+earlycount = 0
+earlystop = copy(endtime)
+
 @time for t = 1:endtime
 # snapshot = @animate for t = 1:endtime
-    # if mod(t, 1000) === 0 print("|") end
-    # if mod(t, 1000) === 0 println(t) end
 
     from_idx = rand(1:L, L^2, 2)
     temp = rand(Bool, L^2);
@@ -167,6 +102,7 @@ entropy6_ = zeros(Float64, endtime)
 
         stage_lattice[i₁, j₁], stage_lattice[i₂, j₂] =
          action(left, right, inter, reprod, intra)
+        end # for τ ∈ 1:(L^2)
     
         # if T === 0
         #     figure = heatmap(stage_lattice, color=colormap_RPS,
@@ -199,14 +135,13 @@ entropy6_ = zeros(Float64, endtime)
         #     end
         # end
 
-    end # for τ ∈ 1:(L^2)
+
     if (mod(t, L) === 1) && (t > L)
         A_[t] = sum(stage_lattice .== 1)
         B_[t] = sum(stage_lattice .== 2)
         C_[t] = sum(stage_lattice .== 3)
         D_[t] = sum(stage_lattice .== 4)
         E_[t] = sum(stage_lattice .== 5)
-
 
         l1 = sum(abs.([
           A_[t] - A_[t-L],
@@ -215,8 +150,12 @@ entropy6_ = zeros(Float64, endtime)
           D_[t] - D_[t-L],
           E_[t] - E_[t-L]]))
 
-        if l1 < L
+        if l1 < (L÷10)^2
+            earlycount += 1
+        end
+        if earlycount > 5
             println("early stopping!")
+            earlystop = t
             break
         end
     end
@@ -250,21 +189,24 @@ entropy6_[end] = entropy(push!(end_population, empty_[end]) ./ L^2, 6)
 # end
 autosave = open(folder_name * "/autosave.csv", "a")
 print(autosave, Dates.now())
-# println(autosave, ",$T,$ε,$(string(p)[2:end-1]),$(empty_[end]),$(alive_[end]),$(entropy6_[end])")
-println(autosave, ",$T,$ε,$p,$(empty_[end]),$(alive_[end]),$(entropy6_[end])")
+println(autosave, ",$T,$earlystop,$ε,$p,$(empty_[end]),$(alive_[end]),$(entropy6_[end])")
 close(autosave)
 
 case = open(folder_name * "/itr" * lpad(T,3,'0') * ".csv", "a")
 print(case, Dates.now())
-# println(case, "$ε,$(string(ps)[2:end-1]),$(empty_[end]),$(alive_[end]),$(entropy6_[end])")
-println(case, ",$T,$ε,$p,$(empty_[end]),$(alive_[end]),$(entropy6_[end])")
+println(case, ",$T,$earlystop,$ε,$p,$(empty_[end]),$(alive_[end]),$(entropy6_[end])")
 close(case)
 
 end # for p, ε ∈ ...
+
 # end # for ε ∈ ε_range
 # print("  "); println(Dates.now())
 # end # for p ∈ p_range
 
-mv(folder_name * "/itr" * lpad(T,3,'0') * ".csv", folder_name * "/T" * lpad(T,3,'0') * ".csv")
+try
+    mv(folder_name * "/itr" * lpad(T,3,'0') * ".csv", folder_name * "/T" * lpad(T,3,'0') * ".csv", force=true)
+catch
+    println("itr*.csv 파일이 T*.csv 파일로 변경되지 못했습니다")
+end
 
 end # for T ∈ itr
