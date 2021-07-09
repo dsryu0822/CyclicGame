@@ -86,7 +86,7 @@ try; mkdir("result" * varying_p * "/cases"); catch; println("result" * varying_p
 # try; mkdir("Entropy"); catch; println("Entropy: already exists"); end
 # try; mkdir("Alive"); catch; println("Alive: already exists"); end
 
-@threads for T ∈ itr
+for T ∈ itr
 Random.seed!(T)
 println()
 println("                           T: $T")
@@ -99,7 +99,7 @@ println(' ' * lpad(T, 2, '0') * " / $(lpad(itr[end], 2, '0'))")
 
 case = open(folder_name * "/itr" * lpad(T,3,'0') * ".csv", "a")
 # println(case, "ε,p1,p2,p3,p4,p5,empty,alive,entropy5,entropy6"); close(case)
-println(case, "T,ε,p,empty,alive,entropy6"); close(case)
+println(case, "date,T,ε,p,empty,alive,entropy6"); close(case)
 
 
 
@@ -234,7 +234,7 @@ empty_[end] = L^2 - total
 alive_[end] = (A_[end] > 0) + (B_[end] > 0) + (C_[end] > 0) + (D_[end] > 0) + (E_[end] > 0)
 entropy6_[end] = entropy(push!(end_population, empty_[end]) ./ L^2, 6)
 
-print(lpad(alive_[end],2))
+# print(lpad(alive_[end],2))
 
 # if T === 0
 #     try
@@ -255,8 +255,9 @@ println(autosave, ",$T,$ε,$p,$(empty_[end]),$(alive_[end]),$(entropy6_[end])")
 close(autosave)
 
 case = open(folder_name * "/itr" * lpad(T,3,'0') * ".csv", "a")
+print(case, Dates.now())
 # println(case, "$ε,$(string(ps)[2:end-1]),$(empty_[end]),$(alive_[end]),$(entropy6_[end])")
-println(case, "$T,$ε,$p,$(empty_[end]),$(alive_[end]),$(entropy6_[end])")
+println(case, ",$T,$ε,$p,$(empty_[end]),$(alive_[end]),$(entropy6_[end])")
 close(case)
 
 end # for p, ε ∈ ...
