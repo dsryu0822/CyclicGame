@@ -42,10 +42,10 @@ case = open(folder_name * "/itr" * lpad(T,3,'0') * ".csv", "a")
 # println(case, "ε,p1,p2,p3,p4,p5,empty,alive,entropy5,entropy6"); close(case)
 println(case, "date,T,earlystop,ε,p,empty,alive,entropy6"); close(case)
 
-for (p, ε) ∈ [10. .^(-1,-1), 10. .^(+1,0), 10. .^(-1,0), 10. .^(-1,+1)]
+# for (p, ε) ∈ [10. .^(-1,-1), 10. .^(+1,0), 10. .^(-1,0), 10. .^(-1,+1)]
 # for (p, ε) ∈ zip(p_range, ε_range)
-# for p ∈ p_range
-# for ε ∈ ε_range
+for p ∈ p_range
+@threads for ε ∈ ε_range
 
 cool_ε = replace(string(round(ε, digits =  3)), "//" => "／")
 cool_p = replace(string(round(p, digits =  3)), "//" => "／")

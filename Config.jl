@@ -1,13 +1,13 @@
-const L = 100
-itr = 0:96
+const L = 500
+itr = 0:9
 
-resolution = 20
+resolution = 16
 ε_log10M = range(0., 3., length = resolution); ε_range = (10. .^ ε_log10M)
 p_log10M = range(-3., 0., length = resolution); p_range = (10. .^ p_log10M)
 # ε_range = [1]
 # p_range = [1]
 
-endtime = 1(L^2)
+endtime = 5(L^2)
 # T = 10^2
 # endtime = T
 
