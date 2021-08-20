@@ -1,6 +1,6 @@
 @time using Base.Threads
 @time using Random, Statistics, StatsBase
-@time using CSV, DataFrames
+@time using CSV, DataFrames, Tables
 @time using Dates
 @time include("Config.jl")
 
@@ -44,8 +44,8 @@ println(case, "date,T,earlystop,ε,p,empty,alive,entropy6"); close(case)
 
 # for (p, ε) ∈ [10. .^(-1,-1), 10. .^(+1,0), 10. .^(-1,0), 10. .^(-1,+1)]
 # for (p, ε) ∈ zip(p_range, ε_range)
-for p ∈ p_range
-@threads for ε ∈ ε_range
+for (p_idx, p) ∈ enumerate(p_range)
+@threads for (ε_idx, ε) ∈ enumerate(ε_range)
 
 cool_ε = replace(string(round(ε, digits =  3)), "//" => "／")
 cool_p = replace(string(round(p, digits =  3)), "//" => "／")
@@ -189,19 +189,21 @@ entropy6_[end] = entropy(push!(end_population, empty_[end]) ./ L^2, 6)
 # end
 autosave = open(folder_name * "/autosave.csv", "a")
 print(autosave, Dates.now())
-println(autosave, ",$T,$earlystop,$ε,$p,$(empty_[end]),$(alive_[end]),$(entropy6_[end])")
+println(autosave, ",$T,$earlystop,$ε,$p,$ε_idx,$p_idx,$(A_[end]),$(B_[end]),$(C_[end]),$(D_[end]),$(E_[end]),$(empty_[end]),$(alive_[end]),$(entropy6_[end])")
 close(autosave)
 
 case = open(folder_name * "/itr" * lpad(T,3,'0') * ".csv", "a")
 print(case, Dates.now())
-println(case, ",$T,$earlystop,$ε,$p,$(empty_[end]),$(alive_[end]),$(entropy6_[end])")
+println(case, ",$T,$earlystop,$ε,$p,$ε_idx,$p_idx,$(A_[end]),$(B_[end]),$(C_[end]),$(D_[end]),$(E_[end]),$(empty_[end]),$(alive_[end]),$(entropy6_[end])")
 close(case)
 
-end # for p, ε ∈ ...
+CSV.write(folder_name * "/T $(lpad(T,3,'0')) $(lpad(ε_idx,3,'0')) $(lpad(p_idx,3,'0')) last.csv", Tables.table(stage_lattice))
 
-# end # for ε ∈ ε_range
+# end # for p, ε ∈ ...
+
+end # for ε ∈ ε_range
 # print("  "); println(Dates.now())
-# end # for p ∈ p_range
+end # for p ∈ p_range
 
 try
     mv(folder_name * "/itr" * lpad(T,3,'0') * ".csv", folder_name * "/T" * lpad(T,3,'0') * ".csv", force=true)
