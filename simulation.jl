@@ -45,7 +45,8 @@ println(case, "date,T,earlystop,ε,p,empty,alive,entropy6"); close(case)
 # for (p, ε) ∈ [10. .^(-1,-1), 10. .^(+1,0), 10. .^(-1,0), 10. .^(-1,+1)]
 # for (p, ε) ∈ zip(p_range, ε_range)
 for (p_idx, p) ∈ enumerate(p_range)
-@threads for (ε_idx, ε) ∈ enumerate(ε_range)
+@threads for ε_idx ∈ 1:length(ε_range)
+ε = ε_range[ε_idx]
 
 cool_ε = replace(string(round(ε, digits =  3)), "//" => "／")
 cool_p = replace(string(round(p, digits =  3)), "//" => "／")
